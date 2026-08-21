@@ -1,0 +1,6 @@
+branch=$(git symbolic-ref --short HEAD)
+
+if [ "$branch" != "main" ] && ! echo "$branch" | grep -qE '^(feat|fix|release|epic)/.+'; then
+    echo "✖ Branch name \"$branch\" must start with feat/, fix/, release/, or epic/"
+    exit 1
+fi

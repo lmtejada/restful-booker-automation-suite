@@ -1,0 +1,14 @@
+# Dependencies and package locks
+node_modules/
+package-lock.json
+
+# Playwright reports
+playwright-report/
+test-results/
+
+# Husky configuration directory
+.husky/
+
+# Build or distribution folders (if you add them later)
+dist/
+build/

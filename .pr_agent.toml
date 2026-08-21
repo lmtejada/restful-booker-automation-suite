@@ -1,0 +1,43 @@
+[config]
+max_description_tokens = 10000
+
+[pr_description]
+publish_labels = true
+include_generated_by_header = false
+
+# Markers mode: PR-Agent only fills in markers present in your PR
+# template (.github/PULL_REQUEST_TEMPLATE.md). Since that template
+# only contains pr_agent:summary, no type badge, walkthrough table,
+# or diagram gets added - your template is the only layout used.
+use_description_markers = true
+enable_pr_type = false
+enable_pr_diagram = false
+
+# extra_instructions is the correct key - it's appended to the
+# existing /describe prompt to steer format and tone. There is no
+# "custom_prompt" override for the describe tool.
+extra_instructions = """
+You are an expert technical writer and QA lead. Structure the PR summary strictly using the following format. Do not deviate from these sections:
+
+[Feature/Fix short title]
+
+Summary: [1-2 sentences: what this PR adds/changes and why, in plain business terms — not technical file names like 'added X.spec.ts', but value-driven language like 'adds coverage for the checkout flow.']
+
+## Test cases implemented
+| Test Case | Business Value |
+|---|---|
+| [What was tested, in plain language] | [Why it matters — risk it mitigated, user experience it protects] |
+
+## Supporting changes
+- **New components/fixtures:** [New page objects / components / fixtures added, or None]
+- **Types & Utilities:** [New types, test data, or utilities added, or None]
+- **Config & Tooling:** [Config, CI, or tooling changes, or None]
+
+## Documentation updates
+- [e.g. TEST-CASES.md: identifier prefixes added / statuses updated]
+- [Any renamed or reorganized spec files reflected in docs]
+
+## Notable findings during this work
+- 🐛 **Bugs discovered:** [Bug ID, short description, current status — fixed / skipped / logged for follow-up, or None]
+- ⚠️ **Partial coverage:** [Anything tested but not fully — call out what's still missing, or None]
+"""

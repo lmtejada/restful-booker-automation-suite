@@ -1,0 +1,24 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Playwright-specific test outputs
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.auth/
+
+# Local environment files
+.env
+.env.dev
+.env.local
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

@@ -1,0 +1,86 @@
+name: Playwright Tests
+on:
+    push:
+        branches: [main]
+jobs:
+    playwright-tests:
+        name: Playwright Tests
+        timeout-minutes: 60
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: lts/*
+            - name: Install dependencies
+              run: npm ci
+            - name: Install Playwright Browsers
+              run: npx playwright install --with-deps
+            - name: Run Playwright tests
+              run: npx playwright test
+              env:
+                  APP_URL: ${{ vars.APP_URL }}
+                  USER_NAME: ${{ secrets.USER_NAME }}
+                  USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+            - name: Upload HTML report artifact
+              uses: actions/upload-artifact@v4
+              if: ${{ !cancelled() }}
+              with:
+                  name: playwright-report
+                  path: playwright-report/
+                  retention-days: 30
+            # report/<run_number>/ is archived per run so history survives; report/index.html
+            # lists them newest-first. Only the last REPORT_HISTORY_LIMIT runs are kept.
+            - name: Checkout gh-pages
+              if: ${{ !cancelled() }}
+              uses: actions/checkout@v4
+              with:
+                  ref: gh-pages
+                  path: gh-pages
+            - name: Archive report and update history index
+              id: publish-history
+              if: ${{ !cancelled() }}
+              env:
+                  REPORT_HISTORY_LIMIT: 20
+                  # Copies this run's HTML report into report/<run_number>/ on the gh-pages branch,
+                  # prunes runs beyond REPORT_HISTORY_LIMIT, regenerates report/index.html with links to all retained
+                  # runs (newest first), then commits and pushes, skipping the commit if nothing changed
+              run: |
+                  set -euo pipefail
+                  cd gh-pages
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  RUN_DIR="report/${{ github.run_number }}"
+                  rm -rf "$RUN_DIR"
+                  mkdir -p "$RUN_DIR"
+                  cp -r ../playwright-report/. "$RUN_DIR"/
+
+                  # Prune runs beyond the retention limit (newest dirs first).
+                  (cd report && ls -1dt */ 2>/dev/null | tail -n +$((REPORT_HISTORY_LIMIT + 1)) | xargs -r rm -rf)
+
+                  {
+                      echo "<!DOCTYPE html><html><head><title>Playwright Report History</title></head><body>"
+                      echo "<h1>Playwright Report History</h1><ul>"
+                      for d in $(cd report && ls -1dt */ | sed 's#/##'); do
+                          echo "<li><a href=\"$d/\">Run $d</a></li>"
+                      done
+                      echo "</ul></body></html>"
+                  } >report/index.html
+
+                  git add report
+                  if git diff --cached --quiet; then
+                      echo "No report changes to commit"
+                  else
+                      git commit -m "Publish report for run ${{ github.run_number }}"
+                      git push
+                  fi
+            # Chained to the publish step's own outcome, not just !cancelled(), so a failed
+            # push (e.g. a gh-pages race) doesn't print a link to a report that isn't there.
+            - name: Summarize report URL
+              if: ${{ !cancelled() && steps.publish-history.outcome == 'success' }}
+              run: |
+                  echo "📊 [View this run's report](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report/${{ github.run_number }}/)" >> "$GITHUB_STEP_SUMMARY"
+                  echo "🗂️ [Report history](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report/)" >> "$GITHUB_STEP_SUMMARY"

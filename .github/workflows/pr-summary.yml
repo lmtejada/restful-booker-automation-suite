@@ -1,0 +1,34 @@
+name: PR Agent
+
+on:
+    pull_request:
+        types: [opened, reopened, ready_for_review]
+    issue_comment:
+        types: [created]
+
+jobs:
+    pr_agent_job:
+        name: PR Summary Agent
+        # Avoid triggering the bot on comments made by other bots
+        if: ${{ github.event.sender.type != 'Bot' }}
+        runs-on: ubuntu-latest
+        permissions:
+            issues: write
+            pull-requests: write
+            contents: write
+        steps:
+            - name: PR Agent action step
+              uses: the-pr-agent/pr-agent@main
+              env:
+                  # Required GitHub token for adding comments & updating descriptions
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+                  # Gemini Configuration
+                  GOOGLE_AI_STUDIO.GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+                  CONFIG.MODEL: 'gemini/gemini-3.1-flash-lite'
+                  CONFIG.FALLBACK_MODELS: '["gemini/gemini-3.5-flash"]'
+
+                  # Automated Triggers & Controls
+                  GITHUB_ACTION_CONFIG.AUTO_DESCRIBE: 'true'
+                  GITHUB_ACTION_CONFIG.AUTO_REVIEW: 'false'
+                  GITHUB_ACTION_CONFIG.AUTO_IMPROVE: 'false'
