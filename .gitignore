@@ -9,6 +9,9 @@ blob-report/
 playwright/.cache/
 .auth/
 
+# Newman report outputs
+reports/newman/
+
 # Local environment files
 .env
 .env.dev

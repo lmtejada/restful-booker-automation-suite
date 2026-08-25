@@ -24,7 +24,11 @@
         "test:destructive": "npx playwright test --grep @destructive --project=chromium --workers=1",
         "report": "npx playwright show-report",
         "typecheck": "tsc --noEmit",
-        "prepare": "husky"
+        "prepare": "husky",
+        "newman:run": "newman run src/collections/restful-booker.postman_collection.json -e src/collections/environment.json",
+        "newman:verbose": "newman run src/collections/restful-booker.postman_collection.json -e src/collections/environment.json --verbose",
+        "newman:bail": "newman run src/collections/restful-booker.postman_collection.json -e src/collections/environment.json --bail",
+        "newman:html": "newman run src/collections/restful-booker.postman_collection.json -e src/collections/environment.json -r htmlextra --reporter-htmlextra-export reports/newman/report.html"
     },
     "devDependencies": {
         "@commitlint/cli": "^21.2.1",
@@ -42,6 +46,8 @@
         "husky": "^9.1.7",
         "jiti": "^2.7.0",
         "lint-staged": "^17.0.8",
+        "newman": "^6.2.2",
+        "newman-reporter-htmlextra": "^1.23.1",
         "prettier": "^3.9.5",
         "typescript-eslint": "^8.64.0"
     },
