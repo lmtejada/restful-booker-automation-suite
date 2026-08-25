@@ -44,9 +44,10 @@ What this suite is targeting, by deliverable:
 
 ```bash
 npm install
-npx playwright install --with-deps
-cp .env.example .env.dev   # fill in APP_URL, API_URL, and user/admin credentials
+cp .env.example .env.dev   # fill in API_URL and any credentials the suite needs
 ```
+
+No `npx playwright install` step — this is an API-only suite (see [At a Glance](#at-a-glance)), so Playwright never launches a browser binary and none need to be downloaded.
 
 Environment files are selected by the `ENVIRONMENT` variable (defaults to `dev`, loading `.env.dev`):
 
@@ -70,17 +71,20 @@ restful-booker-automation-suite/
 │   ├── pre-commit                # Runs lint-staged before each commit
 │   ├── commit-msg                 # Runs commitlint against Conventional Commits format
 │   └── pre-push                   # Blocks pushing from a branch without a feat/fix/release/epic prefix
-├── contracts/                    # Pact consumer specs + generated pact files (not yet created)
-│   ├── specs/
-│   └── pacts/
-├── reports/                       # Generated Newman/Allure output (git-ignored)
+├── reports/                       # All generated test/report output — git-ignored as a whole
+│   ├── allure-results/            # Raw Allure result JSON (from allure-playwright, later newman-reporter-allure too)
+│   ├── allure-report/             # Static HTML report generated via `allure generate`
+│   ├── newman/                    # HTML report from `npm run newman:html`
+│   └── test-results/              # Playwright trace/screenshot/video artifacts (outputDir)
 ├── src/
 │   ├── collections/
 │   │   ├── restful-booker.postman_collection.json  # Postman collection — auth, CRUD, filtering
 │   │   ├── environment.json                          # Local environment values (git-ignored)
 │   │   └── environment.template.json                 # Template to copy for a new environment
-│   ├── enums/
-│   │   └── app.ts                # Shared enums (e.g. StorageStatePaths for auth state files)
+│   ├── contracts/                # Pact consumer/provider specs + generated pact files (not yet created)
+│   │   ├── specs/
+│   │   └── pacts/
+│   ├── enums/                    # Shared enums (empty — add as needed)
 │   ├── fixtures/                 # Custom Playwright fixtures (empty — add as needed)
 │   ├── pages/                    # Page object models (empty — likely unused for an API-only suite)
 │   ├── types/                    # Shared TypeScript types (empty — add as needed)
@@ -94,7 +98,6 @@ restful-booker-automation-suite/
 │   ├── api/                      # Playwright API specs (auth, booking CRUD, schema validation) — empty, next up
 │   ├── e2e/                      # Not used for this project
 │   ├── functional/               # Not used for this project
-│   ├── auth.setup.ts             # Example login/storage-state setup — likely unneeded for a stateless API suite
 │   └── sanity.spec.ts            # Framework smoke check — no real assertions yet
 ├── .env.example                  # Template for required environment variables
 ├── .env.dev                      # Local env file (git-ignored; copy from .env.example)

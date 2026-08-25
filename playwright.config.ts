@@ -1,7 +1,5 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 import dotenv from 'dotenv';
-
-import { StorageStatePaths } from '@enums/app';
 
 /**
  * Load environment variables from .env file.
@@ -35,83 +33,57 @@ export default defineConfig({
     workers: process.env.CI ? 1 : undefined,
 
     /* Reporter configuration */
-    reporter: process.env.CI
-        ? [['blob'], ['html', { open: 'never' }]]
-        : [['html', { open: 'on-failure' }]],
+    reporter: [
+        ['list'], // Terminal summary reporter
+        [
+            'allure-playwright',
+            {
+                resultsDir: 'reports/allure-results',
+                detail: true,
+                suiteTitle: true,
+                globalLabels: {
+                    layer: 'api',
+                },
+            },
+        ],
+    ],
 
-    /* Shared settings for all projects */
+    /* Trace/screenshot/video artifacts for failed tests */
+    outputDir: 'reports/test-results',
+
+    /*
+     * Shared settings for all projects. No `devices[...]` spread and no
+     * browserName anywhere in this file because this is an API-only suite
+     * that uses the `request` fixture exclusively.
+     */
     use: {
-        /* Base URL - uncomment and set if using relative URLs */
-        // baseURL: process.env.APP_URL,
+        // Base endpoint URL for relative path resolution in tests
+        baseURL: process.env.API_URL,
 
-        /* App marks elements with data-test (not the default data-testid) */
-        testIdAttribute: 'data-test',
+        // Common HTTP headers sent with every request
+        extraHTTPHeaders: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+        },
 
-        /* Collect trace when retrying the failed test */
-        trace: 'on-first-retry',
-
-        /* Screenshot on failure */
-        screenshot: 'only-on-failure',
-
-        /* Video on failure */
-        video: 'retain-on-failure',
-
-        /* Action timeout */
+        // Request timeout duration
         actionTimeout: 10000,
 
-        /* Navigation timeout */
-        navigationTimeout: 30000,
+        // Enable tracing for failed tests to help in debugging
+        trace: 'retain-on-failure',
     },
 
     /* Test timeout */
-    timeout: 60000,
+    timeout: 30000,
 
     /* Expect timeout */
     expect: {
         timeout: 10000,
     },
 
-    /* Configure projects */
     projects: [
-        /* Setup project - runs before main tests */
         {
-            name: 'setup',
-            use: {
-                ...devices['Desktop Chrome'],
-                viewport: { width: 1920, height: 1080 },
-            },
-            testMatch: /.*\.setup\.ts/,
+            name: 'restful-booker-api',
         },
-
-        /* Main test project - Chrome */
-        {
-            name: 'chromium',
-            use: {
-                ...devices['Desktop Chrome'],
-                storageState: StorageStatePaths.APP,
-                viewport: { width: 1920, height: 1080 },
-            },
-            dependencies: ['setup'],
-        },
-
-        /* Firefox - commented out by default */
-        // {
-        //     name: 'firefox',
-        //     use: {
-        //         ...devices['Desktop Firefox'],
-        //         storageState: '.auth/app/appStorageState.json',
-        //     },
-        //     dependencies: ['setup'],
-        // },
-
-        /* WebKit - commented out by default */
-        // {
-        //     name: 'webkit',
-        //     use: {
-        //         ...devices['Desktop Safari'],
-        //         storageState: '.auth/app/appStorageState.json',
-        //     },
-        //     dependencies: ['setup'],
-        // },
     ],
 });
