@@ -22,3 +22,6 @@ playwright/.cache/
 *.njsproj
 *.sln
 *.sw?
+
+# Collections and environments
+environment.json

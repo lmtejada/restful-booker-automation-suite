@@ -1,0 +1,411 @@
+{
+    "info": {
+        "_postman_id": "6e82e016-0ccb-4347-b879-f2f19c9be181",
+        "name": "RestfulBookerAPI",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "1504698",
+        "_collection_link": "https://go.postman.co/collection/1504698-6e82e016-0ccb-4347-b879-f2f19c9be181?source=collection_link"
+    },
+    "item": [
+        {
+            "name": "Auth - Create Token",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Auth response contains token field\", function () {",
+                            "    const jsonData = pm.response.json();",
+                            "    pm.expect(jsonData).to.have.property(\"token\");",
+                            "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/auth",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["auth"]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Bookings - Get Booking IDs",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/booking",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["booking"],
+                    "query": [
+                        {
+                            "key": "firstname",
+                            "value": "Jim",
+                            "disabled": true
+                        },
+                        {
+                            "key": "lastname",
+                            "value": null,
+                            "type": "text",
+                            "disabled": true
+                        },
+                        {
+                            "key": "checkin",
+                            "value": null,
+                            "type": "text",
+                            "disabled": true
+                        },
+                        {
+                            "key": "checkout",
+                            "value": null,
+                            "type": "text",
+                            "disabled": true
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Bookings - Get Booking",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/booking/:id",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["booking", ":id"],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "3"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Bookings - Create Booking",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "// Extract and store created booking ID",
+                            "const responseData = pm.response.json();",
+                            "const newBookingId = responseData.bookingid;",
+                            "",
+                            "pm.test(\"Booking creation returned generated booking id and booking data\", function () {",
+                            "    pm.expect(responseData).to.have.property(\"bookingid\");",
+                            "    pm.expect(newBookingId).to.be.a('number');",
+                            "",
+                            "    pm.environment.set(\"bookingId\", newBookingId);",
+                            "",
+                            "    pm.expect(responseData.booking).to.have.property(\"firstname\");",
+                            "});",
+                            "",
+                            "// Query /booking list to verify the ID is present",
+                            "const baseUrl = pm.environment.get(\"baseUrl\");",
+                            "",
+                            "pm.sendRequest(`${baseUrl}/booking`, function (err, res) {",
+                            "    pm.test(\"Created ID is present in booking list\", function () {",
+                            "        pm.expect(err).to.be.null;",
+                            "        const bookingList = res.json();",
+                            "        ",
+                            "        // Search the returned array for our new bookingid",
+                            "        const exists = bookingList.some(item => item.bookingid === newBookingId);",
+                            "        pm.expect(exists).to.be.true;",
+                            "    });",
+                            "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"firstname\": \"Laura\",\n  \"lastname\": \"Tejada\",\n  \"totalprice\": 111,\n  \"depositpaid\": true,\n  \"bookingdates\": {\n    \"checkin\": \"2026-08-25\",\n    \"checkout\": \"2026-08-30\"\n  },\n  \"additionalneeds\": \"Breakfast\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/booking",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["booking"]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Bookings - Update Booking - Full",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Cookie",
+                        "value": "token={{token}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"firstname\": \"Laura\",\n  \"lastname\": \"Tejada\",\n  \"totalprice\": 111,\n  \"depositpaid\": true,\n  \"bookingdates\": {\n    \"checkin\": \"2026-08-25\",\n    \"checkout\": \"2026-08-30\"\n  },\n  \"additionalneeds\": \"Breakfast\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/booking/:id",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["booking", ":id"],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "{{bookingId}}"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Bookings - Update Booking - Partial",
+            "request": {
+                "method": "PATCH",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Cookie",
+                        "value": "token={{token}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"firstname\": \"James\",\n  \"lastname\": \"Brown\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/booking/:id",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["booking", ":id"],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "{{bookingId}}"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Bookings - Delete Booking",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "const targetBookingId = pm.environment.get(\"bookingId\");",
+                            "const baseUrl = pm.environment.get(\"baseUrl\");",
+                            "",
+                            "// Query /booking list to verify the ID has been removed",
+                            "pm.sendRequest(`${baseUrl}/booking`, function (err, res) {",
+                            "    pm.test(\"Deleted ID is no longer present in booking list\", function () {",
+                            "        pm.expect(err).to.be.null;",
+                            "        const bookingList = res.json();",
+                            "        ",
+                            "        // Assert the target ID is NOT in the list",
+                            "        const exists = bookingList.some(item => item.bookingid == targetBookingId);",
+                            "        pm.expect(exists).to.be.false;",
+                            "    });",
+                            "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "Cookie",
+                        "value": "token={{token}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/booking/:id",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["booking", ":id"],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "{{bookingId}}"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                    "// Skip token generation if hitting the /auth endpoint directly",
+                    "if (pm.request.url.getPath().includes('auth')) {",
+                    "    return;",
+                    "}",
+                    "",
+                    "// Check if a token already exists in the environment",
+                    "const existingToken = pm.environment.get(\"token\");",
+                    "",
+                    "// Request a fresh token",
+                    "const baseUrl = pm.environment.get(\"baseUrl\");",
+                    "",
+                    "pm.sendRequest({",
+                    "    url: `${baseUrl}/auth`,",
+                    "    method: 'POST',",
+                    "    header: {",
+                    "        'Content-Type': 'application/json'",
+                    "    },",
+                    "    body: {",
+                    "        mode: 'raw',",
+                    "        raw: JSON.stringify({",
+                    "            \"username\": pm.environment.get(\"admin_username\"),",
+                    "            \"password\": pm.environment.get(\"admin_password\")",
+                    "        })",
+                    "    }",
+                    "}, function (err, res) {",
+                    "    if (err) {",
+                    "        console.error(\"Failed to fetch auth token:\", err);",
+                    "        return;",
+                    "    }",
+                    "",
+                    "    const responseData = res.json();",
+                    "    if (responseData && responseData.token) {",
+                    "        pm.environment.set(\"token\", responseData.token);",
+                    "        console.log(\"Fresh token generated and saved:\", responseData.token);",
+                    "    } else {",
+                    "        console.error(\"Auth response did not contain a valid token.\");",
+                    "    }",
+                    "});"
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                    "// Status Code Validation (Accepts 200 OK or 201 Created for REST conventions)",
+                    "pm.test(\"Status code is 200 or 201\", function () {",
+                    "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                    "});",
+                    "",
+                    "// Performance Target Constraint (< 2000 ms response time)",
+                    "pm.test(\"Response time is under 2000ms\", function () {",
+                    "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                    "});",
+                    "",
+                    "// Content-Type Header Format Constraints",
+                    "pm.test(\"Content-Type header is present\", function () {",
+                    "    pm.response.to.have.header(\"Content-Type\");",
+                    "});",
+                    "",
+                    "// JSON Payload Verification (Applies to JSON endpoints)",
+                    "if (pm.response.headers.get(\"Content-Type\") && pm.response.headers.get(\"Content-Type\").includes(\"application/json\")) {",
+                    "    pm.test(\"Response body is valid JSON\", function () {",
+                    "        const jsonData = pm.response.json();",
+                    "        const isObjectOrArray = typeof jsonData === 'object' && jsonData !== null;",
+                    "        pm.expect(isObjectOrArray).to.be.true;",
+                    "    });",
+                    "}"
+                ]
+            }
+        }
+    ]
+}
