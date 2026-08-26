@@ -15,7 +15,7 @@ const validScenarios = VALIDATION_SCENARIOS.filter(
     (scenario) => scenario.knownBug !== true
 );
 
-test.describe('booking validation', { tag: '@api' }, () => {
+test.describe('booking validation', { tag: ['@api', '@regression'] }, () => {
     for (const scenario of knownBugScenarios) {
         test(
             `Validation: ${scenario.description}`,

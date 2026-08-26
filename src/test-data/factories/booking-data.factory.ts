@@ -23,7 +23,9 @@ export const DEFAULT_BOOKING_DATA: Booking = {
     ]),
 };
 
-export function createBookingData(overrides: Nullable<Booking>): Booking {
+export function createBookingData(
+    overrides: Nullable<Booking> | Record<string, unknown>
+): Booking {
     return { ...DEFAULT_BOOKING_DATA, ...overrides } as Booking;
 }
 
@@ -37,7 +39,7 @@ export function createBookingData(overrides: Nullable<Booking>): Booking {
  */
 interface ValidationScenario {
     description: string;
-    overrides: Nullable<Booking>;
+    overrides: Nullable<Booking> | Record<string, unknown>;
     expectedStatus: number;
     expectedBookingSubset?: Record<string, unknown>;
     knownBug?: boolean;
@@ -69,8 +71,20 @@ export const VALIDATION_SCENARIOS: ValidationScenario[] = [
         knownBug: true,
     },
     {
+        description: 'Non-numeric totalprice value',
+        overrides: { totalprice: 'one-hundred' },
+        expectedStatus: 400,
+        knownBug: true,
+    },
+    {
         description: 'Missing depositpaid',
         overrides: { depositpaid: undefined },
+        expectedStatus: 400,
+        knownBug: true,
+    },
+    {
+        description: 'Non-boolean depositpaid value',
+        overrides: { depositpaid: 'yes' },
         expectedStatus: 400,
         knownBug: true,
     },

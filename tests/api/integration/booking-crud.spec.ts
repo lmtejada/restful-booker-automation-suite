@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 import { DEFAULT_BOOKING_DATA } from '@test-data/factories/booking-data.factory';
+import { DEFAULT_CREDENTIALS } from '@utils/auth';
 
 test.describe.serial(
     'booking Transactional CRUD Lifecycle',
@@ -11,10 +12,7 @@ test.describe.serial(
 
         test('1. Authenticate and obtain access token', async ({ request }) => {
             const response = await request.post('/auth', {
-                data: {
-                    username: 'admin',
-                    password: 'password123',
-                },
+                data: DEFAULT_CREDENTIALS,
             });
 
             expect(response.status()).toBe(200);
