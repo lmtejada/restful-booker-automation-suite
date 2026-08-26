@@ -1,7 +1,7 @@
 {
-    "name": "playwright-scaffold",
+    "name": "restful-booker-automation-suite",
     "version": "1.0.0",
-    "description": "A scaffold for Playwright testing with TypeScript, ESLint, Prettier, and Husky.",
+    "description": "API testing suite for Restful Booker — Postman/Newman, Playwright, and Pact contract testing, with Allure reporting.",
     "author": "Laura Tejada",
     "license": "ISC",
     "scripts": {
@@ -11,13 +11,11 @@
         "test": "npx playwright test",
         "test:ci": "npx playwright test --workers=1",
         "test:debug": "npx playwright test --debug",
-        "test:ui": "npx playwright test --ui",
         "test:smoke": "npx playwright test --grep @smoke",
         "test:sanity": "npx playwright test --grep @sanity",
         "test:regression": "npx playwright test --grep @regression",
         "test:api": "npx playwright test --grep @api",
-        "test:e2e": "npx playwright test --grep @e2e",
-        "test:destructive": "npx playwright test --grep @destructive --workers=1",
+        "test:issues": "npx playwright test --grep @issues",
         "report": "npx playwright show-report",
         "typecheck": "tsc --noEmit",
         "prepare": "husky",
@@ -32,6 +30,7 @@
     "devDependencies": {
         "@commitlint/cli": "^21.2.1",
         "@commitlint/config-conventional": "^21.2.0",
+        "@faker-js/faker": "^10.6.0",
         "@playwright/test": "^1.61.1",
         "@stylistic/eslint-plugin": "^5.10.0",
         "@types/node": "^26.1.1",
