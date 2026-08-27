@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-import { DEFAULT_BOOKING_DATA } from '@test-data/factories/booking-data.factory';
+import {
+    DEFAULT_BOOKING_DATA,
+    MALICIOUS_PAYLOADS,
+} from '@test-data/factories/booking-data.factory';
 
 test.describe(
     'create booking — POST /booking',
@@ -172,6 +175,26 @@ test.describe(
             expect(response.status()).toBe(200);
             const body = await response.json();
             expect(body.booking).not.toHaveProperty('isAdmin');
+        });
+
+        test('stores injection-style inputs inertly instead of erroring', async ({
+            request,
+        }) => {
+            for (const scenario of MALICIOUS_PAYLOADS) {
+                const payload = { ...DEFAULT_BOOKING_DATA, ...scenario };
+                const response = await request.post('/booking', {
+                    data: payload,
+                });
+
+                expect(response.status()).toBe(200);
+                const body = await response.json();
+
+                expect(body.booking.firstname).toBe(payload.firstname);
+                expect(body.booking.lastname).toBe(payload.lastname);
+                expect(body.booking.additionalneeds).toBe(
+                    payload.additionalneeds
+                );
+            }
         });
     }
 );

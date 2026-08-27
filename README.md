@@ -12,25 +12,26 @@ This project layers four testing approaches on top of a shared TypeScript/CI fou
 
 What this suite is targeting, by deliverable:
 
-| #   | Deliverable                                                                                                                                                                         | Status                                                  |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| 1   | **Postman Collection & Newman Layer** — organized collection with environment-driven auth token handling, exported to [src/collections/](src/collections/), runnable via Newman CLI | ✅ Collection, environment, and Newman scripts in place |
-| 2   | **Playwright API Automation Suite** — ~20-25 strict TypeScript specs covering full CRUD lifecycles, JSON schema validation (`ajv`), and cookie-based auth, with no browser involved | 🔲 Not started                                          |
-| 3   | **Pact Consumer Contract Validation** — `@pact-foundation/pact` consumer specs defining expected backend payload shapes, producing a `.json` pact file                              | 🔲 Not started                                          |
-| 4   | **Bugs & Inconsistencies Log** — a QA findings doc cataloguing Restful Booker's intentional design flaws (bad status codes, missing payload constraints, etc.)                      | 🔲 Not started                                          |
-| 5   | **Multi-Stage CI/CD Pipeline** — a single GitHub Actions workflow running Newman, Playwright, and Pact verification, publishing Allure results                                      | 🔲 Workflow file scaffolded, not yet configured         |
+| #   | Deliverable                                                                                                                                                                         | Status                                                                                                                                                                 |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Postman Collection & Newman Layer** — organized collection with environment-driven auth token handling, exported to [src/collections/](src/collections/), runnable via Newman CLI | ✅ Collection, environment, and Newman scripts in place                                                                                                                |
+| 2   | **Playwright API Automation Suite** — strict TypeScript specs covering auth, full booking CRUD, query filtering, and data-driven field validation, with no browser involved         | ✅ 75 tests across 8 spec files — see [tests/api/](tests/api/) and [docs/2. TEST-CASES.md](docs/2.%20TEST-CASES.md)                                                    |
+| 3   | **Pact Consumer Contract Validation** — `@pact-foundation/pact` consumer specs defining expected backend payload shapes, producing a `.json` pact file                              | 🔲 Not started                                                                                                                                                         |
+| 4   | **Bugs & Inconsistencies Log** — a QA findings doc cataloguing Restful Booker's intentional design flaws (bad status codes, missing payload constraints, etc.)                      | ✅ 11 confirmed defects in [docs/3. DEFECT-LOG.md](docs/3.%20DEFECT-LOG.md), cross-referenced with test cases and [docs/1. API-OVERVIEW.md](docs/1.%20API-OVERVIEW.md) |
+| 5   | **Multi-Stage CI/CD Pipeline** — a single GitHub Actions workflow running Newman, Playwright, and Pact verification, publishing Allure results                                      | 🔲 Still pending — `api-pipeline.yml` exists but is empty; lint/typecheck/smoke and full-suite runs are live via separate workflows (see [CI/CD](#cicd))               |
 
 ---
 
 ## At a Glance
 
-| Aspect Details      | Description                                                                                                                                   |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Testing layers**  | Postman/Newman collection, Playwright `APIRequestContext` suite (no browser), Pact consumer contracts — see [Project Goals](#project-goals)   |
-| **CI**              | `api-pipeline.yml` — intended to run Newman, Playwright, and Pact verification on push/PR, then publish an Allure report (not yet configured) |
-| **Git conventions** | Conventional Commits + `feat/`/`fix/`/`release/`/`epic/` branch prefixes, enforced via Husky hooks (see [Code Quality](#code-quality))        |
-| **Path aliases**    | `@pages`, `@fixtures`, `@utils`, `@enums`, `@test-data`, `@app-types` — no relative `../../../` imports                                       |
-| **Env config**      | `.env.<name>` files, selected via `ENVIRONMENT` (defaults to `dev`); CI supplies vars through workflow `env:` blocks instead                  |
+| Aspect Details      | Description                                                                                                                                                                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Testing layers**  | Postman/Newman collection, Playwright `APIRequestContext` suite (no browser, 75 tests), Pact consumer contracts (not started) — see [Project Goals](#project-goals)                                                                              |
+| **CI**              | `on-branch-push.yml` (lint + typecheck + `@smoke`) and `playwright.yml` (full suite) are live; `api-pipeline.yml` (Newman + Playwright + Pact) is scaffolded but empty — see [CI/CD](#cicd)                                                      |
+| **Git conventions** | Conventional Commits + `feat/`/`fix/`/`release/`/`epic/` branch prefixes, enforced via Husky hooks (see [Code Quality](#code-quality))                                                                                                           |
+| **Path aliases**    | `@pages`, `@fixtures`, `@utils`, `@enums`, `@test-data`, `@app-types` — no relative `../../../` imports                                                                                                                                          |
+| **Env config**      | `.env.<name>` files, selected via `ENVIRONMENT` (defaults to `dev`); CI supplies vars through workflow `env:` blocks instead                                                                                                                     |
+| **Docs**            | [docs/1. API-OVERVIEW.md](docs/1.%20API-OVERVIEW.md) (app behavior + known-defect catalog), [docs/2. TEST-CASES.md](docs/2.%20TEST-CASES.md) (every TC), [docs/3. DEFECT-LOG.md](docs/3.%20DEFECT-LOG.md) (repro steps) — cross-referenced by id |
 
 ---
 
@@ -76,6 +77,10 @@ restful-booker-automation-suite/
 │   ├── allure-report/             # Static HTML report generated via `allure generate`
 │   ├── newman/                    # HTML report from `npm run newman:html`
 │   └── test-results/              # Playwright trace/screenshot/video artifacts (outputDir)
+├── docs/
+│   ├── 1. API-OVERVIEW.md        # What the app does, its data/auth model, known defects, "looks like a bug" log
+│   ├── 2. TEST-CASES.md          # Every test case (TC-001–TC-030), grouped by module, with test data tables
+│   └── 3. DEFECT-LOG.md          # Full repro steps for each confirmed defect, cross-linked to TC ids
 ├── src/
 │   ├── collections/
 │   │   ├── restful-booker.postman_collection.json  # Postman collection — auth, CRUD, filtering
@@ -85,20 +90,26 @@ restful-booker-automation-suite/
 │   │   ├── specs/
 │   │   └── pacts/
 │   ├── enums/                    # Shared enums (empty — add as needed)
-│   ├── fixtures/                 # Custom Playwright fixtures (empty — add as needed)
-│   ├── pages/                    # Page object models (empty — likely unused for an API-only suite)
-│   ├── types/                    # Shared TypeScript types (empty — add as needed)
+│   ├── fixtures/
+│   │   └── auth.fixture.ts       # Worker-scoped `authToken` fixture (one login per worker, not per test)
+│   ├── pages/                    # Page object models (empty — unused for an API-only suite)
+│   ├── types/
+│   │   └── app.ts                # `Booking` interface + `Nullable<T>` (negative-test override type)
 │   ├── utils/
+│   │   ├── auth.ts               # `getAuthToken`, `DEFAULT_CREDENTIALS` (from env vars)
 │   │   └── config.ts             # Env var helpers (e.g. getEnv)
 │   └── test-data/
-│       ├── factories/            # Dynamic test data builders (empty — add as needed)
+│       ├── factories/
+│       │   └── booking-data.factory.ts  # `DEFAULT_BOOKING_DATA`, `VALIDATION_SCENARIOS` data table
 │       └── static/
 │           └── users.json        # Static test data
 ├── tests/
-│   ├── api/                      # Playwright API specs (auth, booking CRUD, schema validation) — empty, next up
-│   ├── e2e/                      # Not used for this project
-│   ├── functional/               # Not used for this project
-│   └── sanity.spec.ts            # Framework smoke check — no real assertions yet
+│   ├── api/
+│   │   ├── functional/           # One spec per endpoint (auth, booking create/retrieve/update/delete) +
+│   │   │                         # data-driven `booking-validation.spec.ts`
+│   │   └── integration/          # Cross-endpoint `booking-crud.spec.ts` lifecycle; `schema-validation.spec.ts`
+│   │                             # is a placeholder, not yet implemented
+│   └── sanity.spec.ts            # Framework/environment smoke check
 ├── .env.example                  # Template for required environment variables
 ├── .env.dev                      # Local env file (git-ignored; copy from .env.example)
 ├── commitlint.config.js          # Conventional Commits rules, enforced by the commit-msg hook
@@ -114,27 +125,27 @@ restful-booker-automation-suite/
 
 ## Available Scripts
 
-| Command                                                  | Description                                                                                                                                             |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm test`                                               | Run the full suite across all configured projects                                                                                                       |
-| `npm run test:chromium` / `test:firefox` / `test:webkit` | Run against a single browser (excludes `@destructive` tests) — firefox/webkit need their commented-out projects in `playwright.config.ts` enabled first |
-| `npm run test:ci`                                        | Single-worker Chromium run — not currently wired to any CI workflow; `playwright.yml` runs `npx playwright test` directly instead                       |
-| `npm run test:smoke` / `test:sanity` / `test:regression` | Run tests tagged `@smoke`, `@sanity`, or `@regression`                                                                                                  |
-| `npm run test:api` / `test:e2e`                          | Run tests tagged `@api` or `@e2e`                                                                                                                       |
-| `npm run test:destructive`                               | Run tests tagged `@destructive` (single worker)                                                                                                         |
-| `npm run test:debug`                                     | Run in Playwright's debug/inspector mode                                                                                                                |
-| `npm run test:ui`                                        | Run with Playwright's UI mode                                                                                                                           |
-| `npm run test:headed`                                    | Run headed (excludes `@destructive` tests)                                                                                                              |
-| `npm run report`                                         | Open the last HTML report                                                                                                                               |
-| `npm run lint` / `lint:fix`                              | Lint (and auto-fix) the codebase                                                                                                                        |
-| `npm run typecheck`                                      | Type-check with `tsc --noEmit` (no build output)                                                                                                        |
-| `npm run format`                                         | Format the codebase with Prettier                                                                                                                       |
-| `npm run newman:run`                                     | Run the Postman collection via Newman CLI                                                                                                               |
-| `npm run newman:verbose`                                 | Run with `--verbose` — detailed CLI output, including raw request/response bodies, headers, and cookies for every call                                  |
-| `npm run newman:bail`                                    | Run with `--bail` — stops at the first test failure instead of continuing through the whole collection                                                  |
-| `npm run newman:html`                                    | Run and generate an HTML report via `newman-reporter-htmlextra`, written to `reports/newman/report.html`                                                |
+| Command                                                     | Description                                                                                                              |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `npm test`                                                  | Run the full suite                                                                                                       |
+| `npm run test:ci`                                           | Single-worker run — not currently wired to any CI workflow; `playwright.yml` runs `npx playwright test` directly instead |
+| `npm run test:smoke`                                        | Run tests tagged `@smoke`                                                                                                |
+| `npm run test:sanity`                                       | Run tests tagged `@sanity` (currently unused — no specs carry this tag yet)                                              |
+| `npm run test:regression`                                   | Run tests tagged `@regression`                                                                                           |
+| `npm run test:api`                                          | Run tests tagged `@api`                                                                                                  |
+| `npm run test:issues`                                       | Run tests tagged `@issues` — the known-bug `test.fail()` scenarios documented in `docs/3. DEFECT-LOG.md`                 |
+| `npm run test:debug`                                        | Run in Playwright's debug/inspector mode                                                                                 |
+| `npm run report`                                            | Open the last HTML report                                                                                                |
+| `npm run lint` / `lint:fix`                                 | Lint (and auto-fix) the codebase                                                                                         |
+| `npm run typecheck`                                         | Type-check with `tsc --noEmit` (no build output)                                                                         |
+| `npm run format`                                            | Format the codebase with Prettier                                                                                        |
+| `npm run newman:run`                                        | Run the Postman collection via Newman CLI                                                                                |
+| `npm run newman:verbose`                                    | Run with `--verbose` — detailed CLI output, including raw request/response bodies, headers, and cookies for every call   |
+| `npm run newman:bail`                                       | Run with `--bail` — stops at the first test failure instead of continuing through the whole collection                   |
+| `npm run newman:html`                                       | Run and generate an HTML report via `newman-reporter-htmlextra`, written to `reports/newman/report.html`                 |
+| `npm run allure:generate` / `allure:open` / `allure:report` | Generate and/or open the Allure HTML report from `reports/allure-results/`                                               |
 
-Tag-based scripts rely on `@tag` annotations in test titles (e.g. `test('... @smoke', ...)`), which will be added as specs are written. Newman scripts point at [src/collections/restful-booker.postman_collection.json](src/collections/restful-booker.postman_collection.json) and `src/collections/environment.json` (copy from [environment.template.json](src/collections/environment.template.json) if it doesn't exist locally).
+This is an API-only suite (no `page`/browser fixture), so there are no per-browser scripts (`test:chromium`, etc.) — every test runs against the single `restful-booker-api` project in `playwright.config.ts`. Tag-based scripts rely on `@tag` annotations passed as a test's/describe's `{ tag: ... }` option, not string suffixes in the title. Newman scripts point at [src/collections/restful-booker.postman_collection.json](src/collections/restful-booker.postman_collection.json) and `src/collections/environment.json` (copy from [environment.template.json](src/collections/environment.template.json) if it doesn't exist locally).
 
 ---
 
@@ -144,7 +155,7 @@ Tag-based scripts rely on `@tag` annotations in test titles (e.g. `test('... @sm
 - **`import-x/order`** alphabetizes and groups every import (builtin → external → internal → relative), with `@fixtures/*` sorted after real third-party packages within the external group.
 - **Prettier** enforces consistent formatting (tabs, single quotes, 80-char width).
 - **Husky + lint-staged** run ESLint and Prettier on staged files before each commit.
-- **commitlint** (`commitlint.config.js`, Conventional Commits) checks every commit message via the `commit-msg` hook; the `pre-push` hook additionally blocks pushing from a branch that isn't prefixed `feat/`, `fix/`, `release/`, or `epic/` (`main` is exempt). The branch-name rule has a server-side backstop via a GitHub repository ruleset — set that up per-repo, since it isn't copied by forking/templating (see step 8 above).
+- **commitlint** (`commitlint.config.js`, Conventional Commits) checks every commit message via the `commit-msg` hook; the `pre-push` hook additionally blocks pushing from a branch that isn't prefixed `feat/`, `fix/`, `release/`, or `epic/` (`main` is exempt). The branch-name rule has a server-side backstop via a GitHub repository ruleset — set that up per-repo, since it isn't copied by forking/templating.
 
 ## CI/CD
 

@@ -110,8 +110,8 @@ export const VALIDATION_SCENARIOS: ValidationScenario[] = [
     {
         description: 'Zero totalprice value',
         overrides: { totalprice: 0 },
-        expectedStatus: 200,
-        expectedBookingSubset: { totalprice: 0 },
+        expectedStatus: 400,
+        knownBug: true,
     },
     {
         description: 'Missing depositpaid',
@@ -180,5 +180,24 @@ export const VALIDATION_SCENARIOS: ValidationScenario[] = [
         overrides: { additionalneeds: '@#$%^&*()' },
         expectedStatus: 200,
         expectedBookingSubset: { additionalneeds: '@#$%^&*()' },
+    },
+];
+
+export const MALICIOUS_PAYLOADS = [
+    {
+        description: 'SQL Injection payload',
+        firstname: "Robert'); DROP TABLE bookings;--",
+        lastname: 'TestUser',
+    },
+    {
+        description: 'XSS Script payload',
+        firstname: 'Alex',
+        lastname: '<script>alert(1)</script>',
+    },
+    {
+        description: 'XSS Image onerror payload',
+        firstname: 'Taylor',
+        lastname: 'Smith',
+        additionalneeds: '<img src=x onerror=alert(1)>',
     },
 ];
