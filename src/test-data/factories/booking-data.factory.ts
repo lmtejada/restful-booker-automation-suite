@@ -47,8 +47,27 @@ interface ValidationScenario {
 
 export const VALIDATION_SCENARIOS: ValidationScenario[] = [
     {
+        description: 'Empty booking payload (all required fields missing)',
+        overrides: {
+            firstname: undefined,
+            lastname: undefined,
+            totalprice: undefined,
+            depositpaid: undefined,
+            bookingdates: undefined,
+            additionalneeds: undefined,
+        },
+        expectedStatus: 400,
+        knownBug: true,
+    },
+    {
         description: 'Missing firstname',
         overrides: { firstname: undefined },
+        expectedStatus: 400,
+        knownBug: true,
+    },
+    {
+        description: 'Missing lastname',
+        overrides: { lastname: undefined },
         expectedStatus: 400,
         knownBug: true,
     },
@@ -75,6 +94,24 @@ export const VALIDATION_SCENARIOS: ValidationScenario[] = [
         overrides: { totalprice: 'one-hundred' },
         expectedStatus: 400,
         knownBug: true,
+    },
+    {
+        description: 'Floating-point totalprice value',
+        overrides: { totalprice: 99.5 },
+        expectedStatus: 400,
+        knownBug: true,
+    },
+    {
+        description: 'Negative totalprice value',
+        overrides: { totalprice: -100 },
+        expectedStatus: 400,
+        knownBug: true,
+    },
+    {
+        description: 'Zero totalprice value',
+        overrides: { totalprice: 0 },
+        expectedStatus: 200,
+        expectedBookingSubset: { totalprice: 0 },
     },
     {
         description: 'Missing depositpaid',

@@ -5,7 +5,7 @@ import { DEFAULT_CREDENTIALS } from '@utils/auth';
 
 test.describe.serial(
     'booking Transactional CRUD Lifecycle',
-    { tag: '@api' },
+    { tag: ['@api', '@integration'] },
     () => {
         let bookingId: number;
         let token: string;

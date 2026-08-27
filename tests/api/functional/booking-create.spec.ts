@@ -124,5 +124,54 @@ test.describe(
                 expect(response.status()).toBe(415);
             }
         );
+
+        test(
+            'returns a 500 for a text/plain Content-Type instead of a 4xx',
+            { tag: '@issues' },
+            async ({ request }) => {
+                test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-006)');
+
+                const response = await request.post('/booking', {
+                    headers: { 'Content-Type': 'text/plain' },
+                    data: JSON.stringify(DEFAULT_BOOKING_DATA),
+                });
+
+                expect(response.status()).toBe(415);
+            }
+        );
+
+        test('rejects syntactically malformed JSON with a 400', async ({
+            request,
+        }) => {
+            const response = await request.post('/booking', {
+                data: '{"firstname": "Jim", "lastname": "Brown"',
+            });
+
+            expect(response.status()).toBe(400);
+        });
+
+        test(
+            'returns a 500 for a completely empty body instead of a 400',
+            { tag: '@issues' },
+            async ({ request }) => {
+                test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-001)');
+
+                const response = await request.post('/booking');
+
+                expect(response.status()).toBe(400);
+            }
+        );
+
+        test('ignores unexpected extra fields in the payload', async ({
+            request,
+        }) => {
+            const response = await request.post('/booking', {
+                data: { ...DEFAULT_BOOKING_DATA, isAdmin: true },
+            });
+
+            expect(response.status()).toBe(200);
+            const body = await response.json();
+            expect(body.booking).not.toHaveProperty('isAdmin');
+        });
     }
 );

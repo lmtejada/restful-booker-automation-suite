@@ -7,14 +7,14 @@ test.describe(
     'retrieve bookings — GET /booking & GET /booking/:id',
     { tag: ['@api', '@regression'] },
     () => {
-        let fixtureBookingId: number;
+        let bookingId: number;
 
         test.beforeAll(async ({ request }) => {
             const response = await request.post('/booking', {
                 data: DEFAULT_BOOKING_DATA,
             });
             const body = await response.json();
-            fixtureBookingId = body.bookingid;
+            bookingId = body.bookingid;
         });
 
         test(
@@ -37,7 +37,7 @@ test.describe(
 
             expect(response.status()).toBe(200);
             const body: { bookingid: number }[] = await response.json();
-            expect(body.map((b) => b.bookingid)).toContain(fixtureBookingId);
+            expect(body.map((b) => b.bookingid)).toContain(bookingId);
         });
 
         test('filters by lastname', async ({ request }) => {
@@ -47,7 +47,7 @@ test.describe(
 
             expect(response.status()).toBe(200);
             const body: { bookingid: number }[] = await response.json();
-            expect(body.map((b) => b.bookingid)).toContain(fixtureBookingId);
+            expect(body.map((b) => b.bookingid)).toContain(bookingId);
         });
 
         test('filters by firstname and lastname combined', async ({
@@ -62,7 +62,7 @@ test.describe(
 
             expect(response.status()).toBe(200);
             const body: { bookingid: number }[] = await response.json();
-            expect(body.map((b) => b.bookingid)).toContain(fixtureBookingId);
+            expect(body.map((b) => b.bookingid)).toContain(bookingId);
         });
 
         test(
@@ -80,17 +80,80 @@ test.describe(
 
                 expect(response.status()).toBe(200);
                 const body: { bookingid: number }[] = await response.json();
-                expect(body.map((b) => b.bookingid)).toContain(
-                    fixtureBookingId
-                );
+                expect(body.map((b) => b.bookingid)).toContain(bookingId);
             }
         );
 
+        test(
+            'filters by checkin alone',
+            { tag: '@issues' },
+            async ({ request }) => {
+                test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-009)');
+
+                const response = await request.get('/booking', {
+                    params: {
+                        checkin: DEFAULT_BOOKING_DATA.bookingdates.checkin,
+                    },
+                });
+
+                expect(response.status()).toBe(200);
+                const body: { bookingid: number }[] = await response.json();
+                expect(body.map((b) => b.bookingid)).toContain(bookingId);
+            }
+        );
+
+        test('returns no matches for an empty query parameter value', async ({
+            request,
+        }) => {
+            const response = await request.get('/booking', {
+                params: { firstname: '' },
+            });
+
+            expect(response.status()).toBe(200);
+            const body: { bookingid: number }[] = await response.json();
+            expect(body.map((b) => b.bookingid)).not.toContain(bookingId);
+        });
+
+        test('ignores an unknown query parameter', async ({ request }) => {
+            const response = await request.get('/booking', {
+                params: { foo: 'bar' },
+            });
+
+            expect(response.status()).toBe(200);
+            const body: { bookingid: number }[] = await response.json();
+            expect(body.map((b) => b.bookingid)).toContain(bookingId);
+        });
+
+        test('matches names case-sensitively', async ({ request }) => {
+            const upperResponse = await request.get('/booking', {
+                params: {
+                    firstname: DEFAULT_BOOKING_DATA.firstname.toUpperCase(),
+                },
+            });
+            const lowerResponse = await request.get('/booking', {
+                params: {
+                    firstname: DEFAULT_BOOKING_DATA.firstname.toLowerCase(),
+                },
+            });
+
+            expect(upperResponse.status()).toBe(200);
+            expect(lowerResponse.status()).toBe(200);
+
+            const upperBody: { bookingid: number }[] =
+                await upperResponse.json();
+            const lowerBody: { bookingid: number }[] =
+                await lowerResponse.json();
+
+            expect(upperBody.map((b) => b.bookingid)).not.toContain(bookingId);
+            expect(lowerBody.map((b) => b.bookingid)).not.toContain(bookingId);
+        });
+
         test('gets a single booking by id', async ({ request }) => {
-            const response = await request.get(`/booking/${fixtureBookingId}`);
+            const response = await request.get(`/booking/${bookingId}`);
 
             expect(response.status()).toBe(200);
             const body: Booking = await response.json();
+
             expect(body.firstname).toBe(DEFAULT_BOOKING_DATA.firstname);
             expect(body.lastname).toBe(DEFAULT_BOOKING_DATA.lastname);
         });
@@ -101,10 +164,9 @@ test.describe(
             async ({ request }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-008)');
 
-                const response = await request.get(
-                    `/booking/${fixtureBookingId}`,
-                    { headers: { Accept: 'application/xml' } }
-                );
+                const response = await request.get(`/booking/${bookingId}`, {
+                    headers: { Accept: 'application/xml' },
+                });
 
                 expect(response.headers()['content-type']).toContain(
                     'application/xml'
@@ -115,7 +177,7 @@ test.describe(
         test('honors Accept: application/xml for a single booking', async ({
             request,
         }) => {
-            const response = await request.get(`/booking/${fixtureBookingId}`, {
+            const response = await request.get(`/booking/${bookingId}`, {
                 headers: { Accept: 'application/xml' },
             });
 

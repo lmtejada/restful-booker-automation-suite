@@ -69,6 +69,65 @@ test.describe(
             expect(response.status()).toBe(200);
         });
 
+        test('succeeds with a valid Cookie token even when a fake Authorization header is also present', async ({
+            request,
+            authToken,
+        }) => {
+            const response = await request.put(`/booking/${bookingId}`, {
+                headers: {
+                    Cookie: `token=${authToken}`,
+                    Authorization: 'Basic bm90LWFkbWluOndyb25n',
+                },
+                data: { ...DEFAULT_BOOKING_DATA, totalprice: 222 },
+            });
+
+            expect(response.status()).toBe(200);
+        });
+
+        test('rejects a PUT with an empty body instead of wiping the booking', async ({
+            request,
+            authToken,
+        }) => {
+            const response = await request.put(`/booking/${bookingId}`, {
+                headers: { Cookie: `token=${authToken}` },
+                data: {},
+            });
+
+            expect(response.status()).toBe(400);
+
+            const verifyResponse = await request.get(`/booking/${bookingId}`);
+            const body = await verifyResponse.json();
+            expect(body.firstname).toBe(DEFAULT_BOOKING_DATA.firstname);
+        });
+
+        test('ignores unexpected extra fields on PUT', async ({
+            request,
+            authToken,
+        }) => {
+            const response = await request.put(`/booking/${bookingId}`, {
+                headers: { Cookie: `token=${authToken}` },
+                data: { ...DEFAULT_BOOKING_DATA, isAdmin: true },
+            });
+
+            expect(response.status()).toBe(200);
+            const body = await response.json();
+            expect(body).not.toHaveProperty('isAdmin');
+        });
+
+        test('ignores unexpected extra fields on PATCH', async ({
+            request,
+            authToken,
+        }) => {
+            const response = await request.patch(`/booking/${bookingId}`, {
+                headers: { Cookie: `token=${authToken}` },
+                data: { firstname: 'Patched', isAdmin: true },
+            });
+
+            expect(response.status()).toBe(200);
+            const body = await response.json();
+            expect(body).not.toHaveProperty('isAdmin');
+        });
+
         test('rejects a PUT request with no authorization', async ({
             request,
         }) => {
@@ -94,6 +153,17 @@ test.describe(
         }) => {
             const response = await request.put(`/booking/${bookingId}`, {
                 headers: { Cookie: 'token=not-a-real-token' },
+                data: DEFAULT_BOOKING_DATA,
+            });
+
+            expect(response.status()).toBe(403);
+        });
+
+        test('rejects a PUT request with a fake Authorization header', async ({
+            request,
+        }) => {
+            const response = await request.put(`/booking/${bookingId}`, {
+                headers: { Authorization: 'Basic bm90LWFkbWluOndyb25n' },
                 data: DEFAULT_BOOKING_DATA,
             });
 
