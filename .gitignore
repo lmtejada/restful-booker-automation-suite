@@ -2,10 +2,6 @@
 node_modules/
 jspm_packages/
 
-# Playwright-specific test outputs
-test-results/
-playwright-report/
-blob-report/
 playwright/.cache/
 .auth/
 
@@ -22,3 +18,9 @@ playwright/.cache/
 *.njsproj
 *.sln
 *.sw?
+
+# Collections and environments
+environment.json
+
+# All generated test/report output (Playwright, Newman, Allure)
+reports/
