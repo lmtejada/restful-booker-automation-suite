@@ -1,6 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@fixtures/index.fixture';
 
-import { DEFAULT_BOOKING_DATA } from '@test-data/factories/booking-data.factory';
+import {
+    DEFAULT_BOOKING_DATA,
+    generateBookingData,
+} from '@test-data/factories/booking-data.factory';
 import { DEFAULT_CREDENTIALS } from '@utils/auth';
 
 test.describe.serial(
@@ -10,10 +13,10 @@ test.describe.serial(
         let bookingId: number;
         let token: string;
 
-        test('1. Authenticate and obtain access token', async ({ request }) => {
-            const response = await request.post('/auth', {
-                data: DEFAULT_CREDENTIALS,
-            });
+        test('1. Authenticate and obtain access token', async ({
+            authClient,
+        }) => {
+            const response = await authClient.login(DEFAULT_CREDENTIALS);
 
             expect(response.status()).toBe(200);
             const body = await response.json();
@@ -22,10 +25,8 @@ test.describe.serial(
             token = body.token;
         });
 
-        test('2. Create new booking record', async ({ request }) => {
-            const response = await request.post('/booking', {
-                data: DEFAULT_BOOKING_DATA,
-            });
+        test('2. Create new booking record', async ({ bookingClient }) => {
+            const response = await bookingClient.create(DEFAULT_BOOKING_DATA);
 
             expect(response.status()).toBe(200);
             const body = await response.json();
@@ -40,8 +41,8 @@ test.describe.serial(
             bookingId = body.bookingid;
         });
 
-        test('3. Query reservation by ID', async ({ request }) => {
-            const response = await request.get(`/booking/${bookingId}`);
+        test('3. Query reservation by ID', async ({ bookingClient }) => {
+            const response = await bookingClient.getById(bookingId);
 
             expect(response.status()).toBe(200);
             const body = await response.json();
@@ -53,20 +54,20 @@ test.describe.serial(
             );
         });
 
-        test('4. Update reservation via PUT and PATCH', async ({ request }) => {
+        test('4. Update reservation via PUT and PATCH', async ({
+            bookingClient,
+        }) => {
             // Full modification via PUT
-            const updatedPayload = {
-                ...DEFAULT_BOOKING_DATA,
+            const updatedPayload = generateBookingData({
                 totalprice: 300,
                 additionalneeds: 'Breakfast included',
-            };
-
-            const putResponse = await request.put(`/booking/${bookingId}`, {
-                headers: {
-                    Cookie: `token=${token}`,
-                },
-                data: updatedPayload,
             });
+
+            const putResponse = await bookingClient.update(
+                bookingId,
+                updatedPayload,
+                token
+            );
 
             expect(putResponse.status()).toBe(200);
             const putBody = await putResponse.json();
@@ -74,35 +75,25 @@ test.describe.serial(
             expect(putBody.additionalneeds).toBe('Breakfast included');
 
             // Partial modification via PATCH
-            const patchResponse = await request.patch(`/booking/${bookingId}`, {
-                headers: {
-                    Cookie: `token=${token}`,
-                },
-                data: {
-                    additionalneeds: 'Airport Shuttle',
-                },
-            });
+            const patchResponse = await bookingClient.partialUpdate(
+                bookingId,
+                { additionalneeds: 'Airport Shuttle' },
+                token
+            );
 
             expect(patchResponse.status()).toBe(200);
             const patchBody = await patchResponse.json();
             expect(patchBody.additionalneeds).toBe('Airport Shuttle');
         });
 
-        test('5. Delete record and confirm 404', async ({ request }) => {
-            // Delete resource
-            const deleteResponse = await request.delete(
-                `/booking/${bookingId}`,
-                {
-                    headers: {
-                        Cookie: `token=${token}`,
-                    },
-                }
-            );
+        test('5. Delete record and confirm 404', async ({ bookingClient }) => {
+            const deleteResponse = await bookingClient.delete(bookingId, token);
 
-            expect(deleteResponse.status()).toBe(201); // Restful-Booker returns 201 for DELETE
+            // Restful-Booker returns 201 for DELETE
+            expect(deleteResponse.status()).toBe(201);
 
             // Confirm resource no longer exists
-            const verifyResponse = await request.get(`/booking/${bookingId}`);
+            const verifyResponse = await bookingClient.getById(bookingId);
             expect(verifyResponse.status()).toBe(404);
         });
     }

@@ -37,15 +37,15 @@ All tests hit the live public instance at `https://restful-booker.herokuapp.com`
 
 ### The known-bug pattern (central to this codebase)
 
-Restful Booker has real, confirmed defects (see `docs/3. DEFECT-LOG.md`). Rather than skip or weaken assertions around them, tests assert the **correct** expected behavior and wrap the call in `test.fail(true, 'Known bug — see docs/3. DEFECT-LOG.md (BUG-XXX)')`. This keeps the suite green (a `test.fail()` test failing is itself a "pass") while keeping the assertion honest — if the bug is ever fixed upstream, that test starts unexpectedly passing, which is the signal to flip `knownBug` back off (or delete the `test.fail()` wrapper) and update the defect log entry's status.
+Restful Booker has real, confirmed defects (see `docs/4. DEFECT-LOG.md`). Rather than skip or weaken assertions around them, tests assert the **correct** expected behavior and wrap the call in `test.fail(true, 'Known bug — see docs/4. DEFECT-LOG.md (BUG-XXX)')`. This keeps the suite green (a `test.fail()` test failing is itself a "pass") while keeping the assertion honest — if the bug is ever fixed upstream, that test starts unexpectedly passing, which is the signal to flip `knownBug` back off (or delete the `test.fail()` wrapper) and update the defect log entry's status.
 
 When adding a new test that exposes API misbehavior:
 
 1. Verify actual behavior first (a quick `curl` against the real endpoint), don't assume.
 2. Assert the behavior a well-built API _should_ have, not the buggy one.
 3. Wrap in `test.fail()` with a comment pointing at the `BUG-XXX` id.
-4. Add/extend the defect entry in `docs/3. DEFECT-LOG.md`.
-5. Add/extend the corresponding `TC-XXX` entry in `docs/2. TEST-CASES.md`.
+4. Add/extend the defect entry in `docs/4. DEFECT-LOG.md`.
+5. Add/extend the corresponding `TC-XXX` entry in `docs/3. TEST-CASES.md`.
 
 These three docs cross-reference each other by id (`DEFECT-LOG`'s "Linked TC" column names `TC-XXX`, and TC entries' "Actual result"/"Notes" name `BUG-XXX`) — keep that sync intact when editing any of them. `docs/1. API-OVERVIEW.md` §5 ("Looks like a bug, isn't a bug") is the other half of this: behaviors that looked suspicious but were investigated and confirmed as intentional/correct — check there before assuming something new is a defect.
 
@@ -53,9 +53,27 @@ These three docs cross-reference each other by id (`DEFECT-LOG`'s "Linked TC" co
 
 `src/test-data/factories/booking-data.factory.ts` exports `VALIDATION_SCENARIOS`, an array of `{ description, overrides, expectedStatus, knownBug? }`. `tests/api/functional/booking-validation.spec.ts` splits this into known-bug vs. valid scenarios and loops over each into its own `test()` — this is how ~20 field-level edge cases (missing/null/wrong-type/wrong-range values) stay in one small file instead of one test function per case. Add a new field-validation scenario here rather than writing a standalone test, unless it needs an assertion shape the loop can't express (e.g. checking a response header, or a raw malformed request body) — those live as individual tests in the relevant endpoint's spec file instead (see `booking-create.spec.ts` for examples: malformed JSON syntax, a fully absent body, extra-field handling).
 
+### API clients: Service Object pattern
+
+`src/clients/booking.client.ts` (`BookingClient`) and `src/clients/auth.client.ts` (`AuthClient`) wrap every call to `/booking` and `/auth`. Don't call `request.post('/booking', ...)` or hardcode an endpoint path in a new test — go through the client. Each client exposes two kinds of method:
+
+- A typed, semantic method for the common case: `create(data: Booking)`, `getAll`/`getById`, `update`/`partialUpdate`/`delete` (all take an optional `authToken`), `login(credentials)`. These build headers for you and only accept well-formed data.
+- A matching `*WithOptions` escape hatch (`createWithOptions`, `updateWithOptions`, `partialUpdateWithOptions`, `loginWithOptions`) that takes a raw Playwright request-options object. Reach for this whenever a test needs something a typed method can't express: malformed JSON, an XML body, a custom or combined header set (Basic Auth, a fake `Authorization` alongside a valid `Cookie`), an empty `{}` payload, or extra fields that would fail TypeScript's excess-property check on the typed signature.
+
+A GET request testing an endpoint that only makes sense as a resource path (e.g. asserting `GET /auth` isn't supported) doesn't belong on `AuthClient` — that one case still uses the raw `request` fixture with the `AUTH_PATH`/`BOOKING_PATH` constants from `src/utils/constants.ts`, so the path string still isn't duplicated.
+
+### Fixture composition: mergeTests, not one big file
+
+`src/fixtures/index.fixture.ts` is the fixture import for every spec (`import { test, expect } from '@fixtures/index.fixture'`). It combines two independently-defined fixture files with Playwright's `mergeTests`, neither of which imports the other:
+
+- `src/fixtures/api-clients.fixture.ts` — test-scoped `bookingClient`/`authClient`.
+- `src/fixtures/auth.fixture.ts` — the worker-scoped `authToken` (see below).
+
+Fixtures resolve lazily regardless of how they were composed: a test that only destructures `{ bookingClient }` never triggers the `/auth` call `authToken` would make, even though both come from the same merged `test`. When adding a new fixture, prefer a new file merged in here over extending an existing fixture file directly — it keeps each fixture's concern independent and avoids one file depending on another's internals.
+
 ### Auth: worker-scoped fixture, not per-test
 
-`src/fixtures/auth.fixture.ts` extends Playwright's `test`/`expect` with a worker-scoped `authToken` fixture that authenticates once per worker (via its own `APIRequestContext`, independent of the per-test `request` fixture) and retries once on failure. Specs that need auth (`booking-update.spec.ts`, `booking-delete.spec.ts`) import `test`/`expect` from `@fixtures/auth.fixture` instead of `@playwright/test`, and destructure `authToken` in the test callback. Don't call `POST /auth` directly in a new test unless you have a reason to bypass the shared token.
+`src/fixtures/auth.fixture.ts` extends Playwright's `test`/`expect` with a worker-scoped `authToken` fixture that authenticates once per worker (via its own `APIRequestContext`, independent of the per-test `request` fixture) and retries once on failure. Specs that need auth (`booking-update.spec.ts`, `booking-delete.spec.ts`) destructure `authToken` alongside `bookingClient` from the shared `@fixtures/index.fixture` import. Don't call `POST /auth` directly in a new test unless you have a reason to bypass the shared token or `AuthClient`.
 
 Credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) come from env vars everywhere — never hardcode `admin`/`password123` in a spec.
 
@@ -67,9 +85,9 @@ Credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) come from env vars everywhere �
 
 ### Conventions worth knowing before adding a test
 
-- Path aliases (`@fixtures/*`, `@utils/*`, `@test-data/*`, `@app-types/*`, `@enums/*`, `@pages/*`) resolve to `src/*` subfolders — no relative `../../../` imports.
+- Path aliases (`@fixtures/*`, `@clients/*`, `@utils/*`, `@test-data/*`, `@app-types/*`, `@enums/*`, `@pages/*`) resolve to `src/*` subfolders — no relative `../../../` imports.
 - Tags (`@smoke`, `@regression`, `@api`, `@issues`, `@integration`) map to `npm run test:*` scripts via `--grep`; a test can carry multiple (`{ tag: ['@api', '@regression'] }`).
-- `Nullable<T>` (`src/types/app.ts`) is the override type for negative-test payloads (every field also accepts `null`/`undefined`); `createBookingData()`'s param type is widened to `Nullable<Booking> | Record<string, unknown>` to also allow deliberately wrong-typed values (e.g. `totalprice: 'one-hundred'`) for type-validation scenarios.
+- `Nullable<T>` (`src/types/app.ts`) is the override type for negative-test payloads (every field also accepts `null`/`undefined`); `generateBookingData()`'s param type is widened to `Nullable<Booking> | Record<string, unknown>` to also allow deliberately wrong-typed values (e.g. `totalprice: 'one-hundred'`) for type-validation scenarios.
 - ESLint enforces explicit function return types, import ordering/grouping, no hard waits, web-first assertions, and no `console`/`test.only` — run `npm run lint` before considering a change done.
 
 ### Writing documentation

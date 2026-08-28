@@ -23,7 +23,7 @@ export const DEFAULT_BOOKING_DATA: Booking = {
     ]),
 };
 
-export function createBookingData(
+export function generateBookingData(
     overrides: Nullable<Booking> | Record<string, unknown>
 ): Booking {
     return { ...DEFAULT_BOOKING_DATA, ...overrides } as Booking;

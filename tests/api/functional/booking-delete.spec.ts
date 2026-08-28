@@ -1,4 +1,4 @@
-import { expect, test } from '@fixtures/auth.fixture';
+import { expect, test } from '@fixtures/index.fixture';
 
 import { DEFAULT_BOOKING_DATA } from '@test-data/factories/booking-data.factory';
 
@@ -8,10 +8,8 @@ test.describe(
     () => {
         let bookingId: number;
 
-        test.beforeEach(async ({ request }) => {
-            const response = await request.post('/booking', {
-                data: DEFAULT_BOOKING_DATA,
-            });
+        test.beforeEach(async ({ bookingClient }) => {
+            const response = await bookingClient.create(DEFAULT_BOOKING_DATA);
             const body = await response.json();
             bookingId = body.bookingid;
         });
@@ -19,34 +17,33 @@ test.describe(
         test(
             '[Smoke] deletes a booking with a valid token, then 404s on lookup',
             { tag: '@smoke' },
-            async ({ request, authToken }) => {
-                const deleteResponse = await request.delete(
-                    `/booking/${bookingId}`,
-                    { headers: { Cookie: `token=${authToken}` } }
+            async ({ bookingClient, authToken }) => {
+                const deleteResponse = await bookingClient.delete(
+                    bookingId,
+                    authToken
                 );
                 expect(deleteResponse.status()).toBe(201);
 
-                const verifyResponse = await request.get(
-                    `/booking/${bookingId}`
-                );
+                const verifyResponse = await bookingClient.getById(bookingId);
                 expect(verifyResponse.status()).toBe(404);
             }
         );
 
         test('rejects a delete request with no authorization', async ({
-            request,
+            bookingClient,
         }) => {
-            const response = await request.delete(`/booking/${bookingId}`);
+            const response = await bookingClient.delete(bookingId);
 
             expect(response.status()).toBe(403);
         });
 
         test('rejects a delete request with a malformed token', async ({
-            request,
+            bookingClient,
         }) => {
-            const response = await request.delete(`/booking/${bookingId}`, {
-                headers: { Cookie: 'token=not-a-real-token' },
-            });
+            const response = await bookingClient.delete(
+                bookingId,
+                'not-a-real-token'
+            );
 
             expect(response.status()).toBe(403);
         });
@@ -54,18 +51,18 @@ test.describe(
         test(
             'deleting an already-deleted booking returns 404, not 405',
             { tag: '@issues' },
-            async ({ request, authToken }) => {
+            async ({ bookingClient, authToken }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-007)');
 
-                const firstDelete = await request.delete(
-                    `/booking/${bookingId}`,
-                    { headers: { Cookie: `token=${authToken}` } }
+                const firstDelete = await bookingClient.delete(
+                    bookingId,
+                    authToken
                 );
                 expect(firstDelete.status()).toBe(201);
 
-                const secondDelete = await request.delete(
-                    `/booking/${bookingId}`,
-                    { headers: { Cookie: `token=${authToken}` } }
+                const secondDelete = await bookingClient.delete(
+                    bookingId,
+                    authToken
                 );
                 expect(secondDelete.status()).toBe(404);
             }

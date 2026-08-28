@@ -1,3 +1,5 @@
+import { APIRequestContext } from '@playwright/test';
+
 /**
  * Same shape as T, but every field (including nested objects) also accepts
  * null/undefined — for building deliberately invalid payloads in negative tests.
@@ -17,3 +19,6 @@ export interface Booking {
     };
     additionalneeds?: string;
 }
+
+// A clean alias for the Playwright APIRequestContext post() options type, for use in our API clients and tests.
+export type RequestOptions = Parameters<APIRequestContext['post']>[1];

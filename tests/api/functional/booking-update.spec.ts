@@ -1,6 +1,9 @@
-import { expect, test } from '@fixtures/auth.fixture';
+import { expect, test } from '@fixtures/index.fixture';
 
-import { DEFAULT_BOOKING_DATA } from '@test-data/factories/booking-data.factory';
+import {
+    DEFAULT_BOOKING_DATA,
+    generateBookingData,
+} from '@test-data/factories/booking-data.factory';
 
 test.describe(
     'update booking — PUT & PATCH /booking/:id',
@@ -8,10 +11,8 @@ test.describe(
     () => {
         let bookingId: number;
 
-        test.beforeEach(async ({ request }) => {
-            const response = await request.post('/booking', {
-                data: DEFAULT_BOOKING_DATA,
-            });
+        test.beforeEach(async ({ bookingClient }) => {
+            const response = await bookingClient.create(DEFAULT_BOOKING_DATA);
             const body = await response.json();
             bookingId = body.bookingid;
         });
@@ -19,32 +20,33 @@ test.describe(
         test(
             '[Smoke] fully replaces a booking via PUT with a valid token',
             { tag: '@smoke' },
-            async ({ request, authToken }) => {
-                const updatedPayload = {
-                    ...DEFAULT_BOOKING_DATA,
+            async ({ bookingClient, authToken }) => {
+                const updatedPayload = generateBookingData({
                     totalprice: 999,
                     additionalneeds: 'Late Checkout',
-                };
-
-                const response = await request.put(`/booking/${bookingId}`, {
-                    headers: { Cookie: `token=${authToken}` },
-                    data: updatedPayload,
                 });
+
+                const response = await bookingClient.update(
+                    bookingId,
+                    updatedPayload,
+                    authToken
+                );
 
                 expect(response.status()).toBe(200);
                 const body = await response.json();
-                expect(body).toMatchObject(updatedPayload);
+                expect(body).toMatchObject({ ...updatedPayload });
             }
         );
 
         test('partially updates a booking via PATCH, leaving other fields intact', async ({
-            request,
+            bookingClient,
             authToken,
         }) => {
-            const response = await request.patch(`/booking/${bookingId}`, {
-                headers: { Cookie: `token=${authToken}` },
-                data: { firstname: 'Updated' },
-            });
+            const response = await bookingClient.partialUpdate(
+                bookingId,
+                { firstname: 'Updated' },
+                authToken
+            );
 
             expect(response.status()).toBe(200);
             const body = await response.json();
@@ -55,58 +57,58 @@ test.describe(
         });
 
         test('accepts Basic Auth as an alternative to the token cookie', async ({
-            request,
+            bookingClient,
         }) => {
             const basicAuth = Buffer.from(
                 `${process.env.ADMIN_USERNAME}:${process.env.ADMIN_PASSWORD}`
             ).toString('base64');
 
-            const response = await request.put(`/booking/${bookingId}`, {
+            const response = await bookingClient.updateWithOptions(bookingId, {
                 headers: { Authorization: `Basic ${basicAuth}` },
-                data: { ...DEFAULT_BOOKING_DATA, totalprice: 111 },
+                data: generateBookingData({ totalprice: 111 }),
             });
 
             expect(response.status()).toBe(200);
         });
 
         test('succeeds with a valid Cookie token even when a fake Authorization header is also present', async ({
-            request,
+            bookingClient,
             authToken,
         }) => {
-            const response = await request.put(`/booking/${bookingId}`, {
+            const response = await bookingClient.updateWithOptions(bookingId, {
                 headers: {
                     Cookie: `token=${authToken}`,
                     Authorization: 'Basic bm90LWFkbWluOndyb25n',
                 },
-                data: { ...DEFAULT_BOOKING_DATA, totalprice: 222 },
+                data: generateBookingData({ totalprice: 222 }),
             });
 
             expect(response.status()).toBe(200);
         });
 
         test('rejects a PUT with an empty body instead of wiping the booking', async ({
-            request,
+            bookingClient,
             authToken,
         }) => {
-            const response = await request.put(`/booking/${bookingId}`, {
+            const response = await bookingClient.updateWithOptions(bookingId, {
                 headers: { Cookie: `token=${authToken}` },
                 data: {},
             });
 
             expect(response.status()).toBe(400);
 
-            const verifyResponse = await request.get(`/booking/${bookingId}`);
+            const verifyResponse = await bookingClient.getById(bookingId);
             const body = await verifyResponse.json();
             expect(body.firstname).toBe(DEFAULT_BOOKING_DATA.firstname);
         });
 
         test('ignores unexpected extra fields on PUT', async ({
-            request,
+            bookingClient,
             authToken,
         }) => {
-            const response = await request.put(`/booking/${bookingId}`, {
+            const response = await bookingClient.updateWithOptions(bookingId, {
                 headers: { Cookie: `token=${authToken}` },
-                data: { ...DEFAULT_BOOKING_DATA, isAdmin: true },
+                data: generateBookingData({ isAdmin: true }),
             });
 
             expect(response.status()).toBe(200);
@@ -115,13 +117,16 @@ test.describe(
         });
 
         test('ignores unexpected extra fields on PATCH', async ({
-            request,
+            bookingClient,
             authToken,
         }) => {
-            const response = await request.patch(`/booking/${bookingId}`, {
-                headers: { Cookie: `token=${authToken}` },
-                data: { firstname: 'Patched', isAdmin: true },
-            });
+            const response = await bookingClient.partialUpdateWithOptions(
+                bookingId,
+                {
+                    headers: { Cookie: `token=${authToken}` },
+                    data: { firstname: 'Patched', isAdmin: true },
+                }
+            );
 
             expect(response.status()).toBe(200);
             const body = await response.json();
@@ -129,40 +134,42 @@ test.describe(
         });
 
         test('rejects a PUT request with no authorization', async ({
-            request,
+            bookingClient,
         }) => {
-            const response = await request.put(`/booking/${bookingId}`, {
-                data: DEFAULT_BOOKING_DATA,
-            });
+            const response = await bookingClient.update(
+                bookingId,
+                DEFAULT_BOOKING_DATA
+            );
 
             expect(response.status()).toBe(403);
         });
 
         test('rejects a PATCH request with no authorization', async ({
-            request,
+            bookingClient,
         }) => {
-            const response = await request.patch(`/booking/${bookingId}`, {
-                data: { firstname: 'Nope' },
+            const response = await bookingClient.partialUpdate(bookingId, {
+                firstname: 'Nope',
             });
 
             expect(response.status()).toBe(403);
         });
 
         test('rejects a PUT request with a malformed token', async ({
-            request,
+            bookingClient,
         }) => {
-            const response = await request.put(`/booking/${bookingId}`, {
-                headers: { Cookie: 'token=not-a-real-token' },
-                data: DEFAULT_BOOKING_DATA,
-            });
+            const response = await bookingClient.update(
+                bookingId,
+                DEFAULT_BOOKING_DATA,
+                'not-a-real-token'
+            );
 
             expect(response.status()).toBe(403);
         });
 
         test('rejects a PUT request with a fake Authorization header', async ({
-            request,
+            bookingClient,
         }) => {
-            const response = await request.put(`/booking/${bookingId}`, {
+            const response = await bookingClient.updateWithOptions(bookingId, {
                 headers: { Authorization: 'Basic bm90LWFkbWluOndyb25n' },
                 data: DEFAULT_BOOKING_DATA,
             });
@@ -173,13 +180,14 @@ test.describe(
         test(
             'updating a non-existent booking id returns 404, not 405',
             { tag: '@issues' },
-            async ({ request, authToken }) => {
+            async ({ bookingClient, authToken }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-007)');
 
-                const response = await request.put('/booking/999999999', {
-                    headers: { Cookie: `token=${authToken}` },
-                    data: DEFAULT_BOOKING_DATA,
-                });
+                const response = await bookingClient.update(
+                    999999999,
+                    DEFAULT_BOOKING_DATA,
+                    authToken
+                );
 
                 expect(response.status()).toBe(404);
             }

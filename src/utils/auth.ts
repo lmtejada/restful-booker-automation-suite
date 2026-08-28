@@ -19,3 +19,9 @@ export async function getAuthToken(
 
     return body.token;
 }
+
+export function addAuthHeader(
+    token?: string
+): Record<string, string> | undefined {
+    return token ? { Cookie: `token=${token}` } : undefined;
+}

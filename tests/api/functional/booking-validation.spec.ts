@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@fixtures/index.fixture';
 
 import {
-    createBookingData,
+    generateBookingData,
     VALIDATION_SCENARIOS,
 } from '@test-data/factories/booking-data.factory';
 
@@ -20,12 +20,12 @@ test.describe('booking validation', { tag: ['@api', '@regression'] }, () => {
         test(
             `Validation: ${scenario.description}`,
             { tag: '@issues' },
-            async ({ request }) => {
+            async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/related/DEFECT-LOG.md');
 
-                const response = await request.post('/booking', {
-                    data: createBookingData(scenario.overrides),
-                });
+                const response = await bookingClient.create(
+                    generateBookingData(scenario.overrides)
+                );
 
                 expect(response.status()).toBe(scenario.expectedStatus);
             }
@@ -33,10 +33,12 @@ test.describe('booking validation', { tag: ['@api', '@regression'] }, () => {
     }
 
     for (const scenario of validScenarios) {
-        test(`Validation: ${scenario.description}`, async ({ request }) => {
-            const response = await request.post('/booking', {
-                data: createBookingData(scenario.overrides),
-            });
+        test(`Validation: ${scenario.description}`, async ({
+            bookingClient,
+        }) => {
+            const response = await bookingClient.create(
+                generateBookingData(scenario.overrides)
+            );
 
             expect(response.status()).toBe(scenario.expectedStatus);
             const body = await response.json();

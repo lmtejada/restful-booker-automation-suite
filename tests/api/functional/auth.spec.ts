@@ -1,6 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '@fixtures/index.fixture';
 
 import { DEFAULT_CREDENTIALS } from '@utils/auth';
+import { AUTH_PATH } from '@utils/constants';
 
 test.describe(
     'authentication — POST /auth',
@@ -9,10 +10,8 @@ test.describe(
         test(
             '[Smoke] valid credentials return a token',
             { tag: '@smoke' },
-            async ({ request }) => {
-                const response = await request.post('/auth', {
-                    data: DEFAULT_CREDENTIALS,
-                });
+            async ({ authClient }) => {
+                const response = await authClient.login(DEFAULT_CREDENTIALS);
 
                 expect(response.status()).toBe(200);
                 const body = await response.json();
@@ -22,9 +21,10 @@ test.describe(
             }
         );
 
-        test('rejects an incorrect password', async ({ request }) => {
-            const response = await request.post('/auth', {
-                data: { ...DEFAULT_CREDENTIALS, password: 'wrong-password' },
+        test('rejects an incorrect password', async ({ authClient }) => {
+            const response = await authClient.login({
+                ...DEFAULT_CREDENTIALS,
+                password: 'wrong-password',
             });
 
             expect(response.status()).toBe(200);
@@ -32,9 +32,10 @@ test.describe(
             expect(body).toEqual({ reason: 'Bad credentials' });
         });
 
-        test('rejects an incorrect username', async ({ request }) => {
-            const response = await request.post('/auth', {
-                data: { ...DEFAULT_CREDENTIALS, username: 'new-user' },
+        test('rejects an incorrect username', async ({ authClient }) => {
+            const response = await authClient.login({
+                ...DEFAULT_CREDENTIALS,
+                username: 'new-user',
             });
 
             expect(response.status()).toBe(200);
@@ -43,10 +44,10 @@ test.describe(
         });
 
         test('rejects a request missing the username field', async ({
-            request,
+            authClient,
         }) => {
-            const response = await request.post('/auth', {
-                data: { password: DEFAULT_CREDENTIALS.password },
+            const response = await authClient.login({
+                password: DEFAULT_CREDENTIALS.password,
             });
 
             expect(response.status()).toBe(200);
@@ -55,10 +56,10 @@ test.describe(
         });
 
         test('rejects a request missing the password field', async ({
-            request,
+            authClient,
         }) => {
-            const response = await request.post('/auth', {
-                data: { username: DEFAULT_CREDENTIALS.username },
+            const response = await authClient.login({
+                username: DEFAULT_CREDENTIALS.username,
             });
 
             expect(response.status()).toBe(200);
@@ -69,10 +70,10 @@ test.describe(
         test(
             'returns 415 for a non-JSON Content-Type instead of a misleading Bad credentials',
             { tag: '@issues' },
-            async ({ request }) => {
+            async ({ authClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-010)');
 
-                const response = await request.post('/auth', {
+                const response = await authClient.loginWithOptions({
                     headers: { 'Content-Type': 'text/plain' },
                     data: JSON.stringify(DEFAULT_CREDENTIALS),
                 });
@@ -82,7 +83,7 @@ test.describe(
         );
 
         test('rejects unsupported HTTP methods', async ({ request }) => {
-            const response = await request.get('/auth');
+            const response = await request.get(AUTH_PATH);
 
             expect(response.status()).toBe(404);
         });

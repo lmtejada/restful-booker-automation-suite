@@ -15,9 +15,9 @@ What this suite is targeting, by deliverable:
 | #   | Deliverable                                                                                                                                                                         | Status                                                                                                                                                                 |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | **Postman Collection & Newman Layer** — organized collection with environment-driven auth token handling, exported to [src/collections/](src/collections/), runnable via Newman CLI | ✅ Collection, environment, and Newman scripts in place                                                                                                                |
-| 2   | **Playwright API Automation Suite** — strict TypeScript specs covering auth, full booking CRUD, query filtering, and data-driven field validation, with no browser involved         | ✅ 75 tests across 8 spec files — see [tests/api/](tests/api/) and [docs/2. TEST-CASES.md](docs/2.%20TEST-CASES.md)                                                    |
+| 2   | **Playwright API Automation Suite** — strict TypeScript specs covering auth, full booking CRUD, query filtering, and data-driven field validation, with no browser involved         | ✅ 75 tests across 8 spec files — see [tests/api/](tests/api/) and [docs/3. TEST-CASES.md](docs/3.%20TEST-CASES.md)                                                    |
 | 3   | **Pact Consumer Contract Validation** — `@pact-foundation/pact` consumer specs defining expected backend payload shapes, producing a `.json` pact file                              | 🔲 Not started                                                                                                                                                         |
-| 4   | **Bugs & Inconsistencies Log** — a QA findings doc cataloguing Restful Booker's intentional design flaws (bad status codes, missing payload constraints, etc.)                      | ✅ 11 confirmed defects in [docs/3. DEFECT-LOG.md](docs/3.%20DEFECT-LOG.md), cross-referenced with test cases and [docs/1. API-OVERVIEW.md](docs/1.%20API-OVERVIEW.md) |
+| 4   | **Bugs & Inconsistencies Log** — a QA findings doc cataloguing Restful Booker's intentional design flaws (bad status codes, missing payload constraints, etc.)                      | ✅ 11 confirmed defects in [docs/4. DEFECT-LOG.md](docs/4.%20DEFECT-LOG.md), cross-referenced with test cases and [docs/1. API-OVERVIEW.md](docs/1.%20API-OVERVIEW.md) |
 | 5   | **Multi-Stage CI/CD Pipeline** — a single GitHub Actions workflow running Newman, Playwright, and Pact verification, publishing Allure results                                      | 🔲 Still pending — `api-pipeline.yml` exists but is empty; lint/typecheck/smoke and full-suite runs are live via separate workflows (see [CI/CD](#cicd))               |
 
 ---
@@ -31,7 +31,7 @@ What this suite is targeting, by deliverable:
 | **Git conventions** | Conventional Commits + `feat/`/`fix/`/`release/`/`epic/` branch prefixes, enforced via Husky hooks (see [Code Quality](#code-quality))                                                                                                           |
 | **Path aliases**    | `@pages`, `@fixtures`, `@utils`, `@enums`, `@test-data`, `@app-types` — no relative `../../../` imports                                                                                                                                          |
 | **Env config**      | `.env.<name>` files, selected via `ENVIRONMENT` (defaults to `dev`); CI supplies vars through workflow `env:` blocks instead                                                                                                                     |
-| **Docs**            | [docs/1. API-OVERVIEW.md](docs/1.%20API-OVERVIEW.md) (app behavior + known-defect catalog), [docs/2. TEST-CASES.md](docs/2.%20TEST-CASES.md) (every TC), [docs/3. DEFECT-LOG.md](docs/3.%20DEFECT-LOG.md) (repro steps) — cross-referenced by id |
+| **Docs**            | [docs/1. API-OVERVIEW.md](docs/1.%20API-OVERVIEW.md) (app behavior + known-defect catalog), [docs/2. TEST-FRAMEWORK.md](docs/2.%20TEST-FRAMEWORK.md) (suite structure + rationale), [docs/3. TEST-CASES.md](docs/3.%20TEST-CASES.md) (every TC), [docs/4. DEFECT-LOG.md](docs/4.%20DEFECT-LOG.md) (repro steps) — the last three cross-referenced by id |
 
 ---
 
@@ -79,8 +79,9 @@ restful-booker-automation-suite/
 │   └── test-results/              # Playwright trace/screenshot/video artifacts (outputDir)
 ├── docs/
 │   ├── 1. API-OVERVIEW.md        # What the app does, its data/auth model, known defects, "looks like a bug" log
-│   ├── 2. TEST-CASES.md          # Every test case (TC-001–TC-030), grouped by module, with test data tables
-│   └── 3. DEFECT-LOG.md          # Full repro steps for each confirmed defect, cross-linked to TC ids
+│   ├── 2. TEST-FRAMEWORK.md      # Suite structure, conventions, and the rationale behind them
+│   ├── 3. TEST-CASES.md          # Every test case (TC-001–TC-030), grouped by module, with test data tables
+│   └── 4. DEFECT-LOG.md          # Full repro steps for each confirmed defect, cross-linked to TC ids
 ├── src/
 │   ├── collections/
 │   │   ├── restful-booker.postman_collection.json  # Postman collection — auth, CRUD, filtering
@@ -99,10 +100,8 @@ restful-booker-automation-suite/
 │   │   ├── auth.ts               # `getAuthToken`, `DEFAULT_CREDENTIALS` (from env vars)
 │   │   └── config.ts             # Env var helpers (e.g. getEnv)
 │   └── test-data/
-│       ├── factories/
-│       │   └── booking-data.factory.ts  # `DEFAULT_BOOKING_DATA`, `VALIDATION_SCENARIOS` data table
-│       └── static/
-│           └── users.json        # Static test data
+│       └── factories/
+│           └── booking-data.factory.ts  # `DEFAULT_BOOKING_DATA`, `VALIDATION_SCENARIOS` data table
 ├── tests/
 │   ├── api/
 │   │   ├── functional/           # One spec per endpoint (auth, booking create/retrieve/update/delete) +
@@ -130,10 +129,9 @@ restful-booker-automation-suite/
 | `npm test`                                                  | Run the full suite                                                                                                       |
 | `npm run test:ci`                                           | Single-worker run — not currently wired to any CI workflow; `playwright.yml` runs `npx playwright test` directly instead |
 | `npm run test:smoke`                                        | Run tests tagged `@smoke`                                                                                                |
-| `npm run test:sanity`                                       | Run tests tagged `@sanity` (currently unused — no specs carry this tag yet)                                              |
 | `npm run test:regression`                                   | Run tests tagged `@regression`                                                                                           |
 | `npm run test:api`                                          | Run tests tagged `@api`                                                                                                  |
-| `npm run test:issues`                                       | Run tests tagged `@issues` — the known-bug `test.fail()` scenarios documented in `docs/3. DEFECT-LOG.md`                 |
+| `npm run test:issues`                                       | Run tests tagged `@issues` — the known-bug `test.fail()` scenarios documented in `docs/4. DEFECT-LOG.md`                 |
 | `npm run test:debug`                                        | Run in Playwright's debug/inspector mode                                                                                 |
 | `npm run report`                                            | Open the last HTML report                                                                                                |
 | `npm run lint` / `lint:fix`                                 | Lint (and auto-fix) the codebase                                                                                         |

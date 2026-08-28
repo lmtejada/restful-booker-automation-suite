@@ -1,7 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '@fixtures/index.fixture';
 
 import {
     DEFAULT_BOOKING_DATA,
+    generateBookingData,
     MALICIOUS_PAYLOADS,
 } from '@test-data/factories/booking-data.factory';
 
@@ -12,10 +13,9 @@ test.describe(
         test(
             '[Smoke] creates a booking from a valid JSON payload',
             { tag: '@smoke' },
-            async ({ request }) => {
-                const response = await request.post('/booking', {
-                    data: DEFAULT_BOOKING_DATA,
-                });
+            async ({ bookingClient }) => {
+                const response =
+                    await bookingClient.create(DEFAULT_BOOKING_DATA);
 
                 expect(response.status()).toBe(200);
                 const body = await response.json();
@@ -36,10 +36,10 @@ test.describe(
         test(
             'returns Content-Type: application/xml for an XML response',
             { tag: '@issues' },
-            async ({ request }) => {
+            async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-008)');
 
-                const response = await request.post('/booking', {
+                const response = await bookingClient.createWithOptions({
                     headers: {
                         'Content-Type': 'text/xml',
                         Accept: 'application/xml',
@@ -63,7 +63,9 @@ test.describe(
             }
         );
 
-        test('creates a booking from an XML payload', async ({ request }) => {
+        test('creates a booking from an XML payload', async ({
+            bookingClient,
+        }) => {
             const xmlPayload = `
                 <booking>
                     <firstname>${DEFAULT_BOOKING_DATA.firstname}</firstname>
@@ -76,7 +78,7 @@ test.describe(
                     </bookingdates>
                 </booking>`;
 
-            const response = await request.post('/booking', {
+            const response = await bookingClient.createWithOptions({
                 headers: {
                     'Content-Type': 'text/xml',
                     Accept: 'application/xml',
@@ -96,18 +98,17 @@ test.describe(
         test(
             'accepts an illogical date range where checkin is after checkout',
             { tag: '@issues' },
-            async ({ request }) => {
+            async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-005)');
 
-                const response = await request.post('/booking', {
-                    data: {
-                        ...DEFAULT_BOOKING_DATA,
+                const response = await bookingClient.create(
+                    generateBookingData({
                         bookingdates: {
                             checkin: '2026-05-10',
                             checkout: '2026-05-01',
                         },
-                    },
-                });
+                    })
+                );
 
                 expect(response.status()).toBe(400);
             }
@@ -116,10 +117,10 @@ test.describe(
         test(
             'returns a 500 for an unsupported Content-Type instead of a 4xx',
             { tag: '@issues' },
-            async ({ request }) => {
+            async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-006)');
 
-                const response = await request.post('/booking', {
+                const response = await bookingClient.createWithOptions({
                     headers: { 'Content-Type': 'application/yaml' },
                     data: 'firstname: Jim',
                 });
@@ -131,10 +132,10 @@ test.describe(
         test(
             'returns a 500 for a text/plain Content-Type instead of a 4xx',
             { tag: '@issues' },
-            async ({ request }) => {
+            async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-006)');
 
-                const response = await request.post('/booking', {
+                const response = await bookingClient.createWithOptions({
                     headers: { 'Content-Type': 'text/plain' },
                     data: JSON.stringify(DEFAULT_BOOKING_DATA),
                 });
@@ -144,9 +145,9 @@ test.describe(
         );
 
         test('rejects syntactically malformed JSON with a 400', async ({
-            request,
+            bookingClient,
         }) => {
-            const response = await request.post('/booking', {
+            const response = await bookingClient.createWithOptions({
                 data: '{"firstname": "Jim", "lastname": "Brown"',
             });
 
@@ -156,20 +157,20 @@ test.describe(
         test(
             'returns a 500 for a completely empty body instead of a 400',
             { tag: '@issues' },
-            async ({ request }) => {
+            async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-001)');
 
-                const response = await request.post('/booking');
+                const response = await bookingClient.createWithOptions();
 
                 expect(response.status()).toBe(400);
             }
         );
 
         test('ignores unexpected extra fields in the payload', async ({
-            request,
+            bookingClient,
         }) => {
-            const response = await request.post('/booking', {
-                data: { ...DEFAULT_BOOKING_DATA, isAdmin: true },
+            const response = await bookingClient.createWithOptions({
+                data: generateBookingData({ isAdmin: true }),
             });
 
             expect(response.status()).toBe(200);
@@ -177,12 +178,12 @@ test.describe(
             expect(body.booking).not.toHaveProperty('isAdmin');
         });
 
-        test('stores injection-style inputs inertly instead of erroring', async ({
-            request,
+        test('stores injection-style inputs instead of erroring', async ({
+            bookingClient,
         }) => {
             for (const scenario of MALICIOUS_PAYLOADS) {
-                const payload = { ...DEFAULT_BOOKING_DATA, ...scenario };
-                const response = await request.post('/booking', {
+                const payload = generateBookingData(scenario);
+                const response = await bookingClient.createWithOptions({
                     data: payload,
                 });
 
