@@ -35,6 +35,8 @@ jobs:
               run: npm run test:smoke
               env:
                   API_URL: ${{ vars.API_URL }}
+                  ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+                  ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
             - uses: actions/upload-artifact@v4
               if: ${{ !cancelled() }}
               with:
