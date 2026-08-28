@@ -1,4 +1,4 @@
-import { test, expect } from '@fixtures/index.fixture';
+import { test, expect } from '@fixtures/app.fixture';
 
 import {
     generateBookingData,
