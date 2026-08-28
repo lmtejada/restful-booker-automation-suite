@@ -11,7 +11,7 @@ test.describe(
     { tag: ['@api', '@regression'] },
     () => {
         test(
-            '[Smoke] creates a booking from a valid JSON payload',
+            '[TC-005]: creates a booking from a valid JSON payload',
             { tag: '@smoke' },
             async ({ bookingClient }) => {
                 const response =
@@ -34,7 +34,7 @@ test.describe(
         );
 
         test(
-            'returns Content-Type: application/xml for an XML response',
+            '[TC-007]: returns Content-Type: application/xml for an XML response',
             { tag: '@issues' },
             async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-008)');
@@ -63,7 +63,7 @@ test.describe(
             }
         );
 
-        test('creates a booking from an XML payload', async ({
+        test('[TC-006]: creates a booking from an XML payload', async ({
             bookingClient,
         }) => {
             const xmlPayload = `
@@ -96,7 +96,7 @@ test.describe(
         });
 
         test(
-            'accepts an illogical date range where checkin is after checkout',
+            '[TC-008]: accepts an illogical date range where checkin is after checkout',
             { tag: '@issues' },
             async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-005)');
@@ -115,7 +115,7 @@ test.describe(
         );
 
         test(
-            'returns a 500 for an unsupported Content-Type instead of a 4xx',
+            '[TC-009]: returns a 500 for an unsupported Content-Type instead of a 4xx',
             { tag: '@issues' },
             async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-006)');
@@ -130,7 +130,7 @@ test.describe(
         );
 
         test(
-            'returns a 500 for a text/plain Content-Type instead of a 4xx',
+            '[TC-009]: returns a 500 for a text/plain Content-Type instead of a 4xx',
             { tag: '@issues' },
             async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-006)');
@@ -144,7 +144,7 @@ test.describe(
             }
         );
 
-        test('rejects syntactically malformed JSON with a 400', async ({
+        test('[TC-008]: rejects syntactically malformed JSON with a 400', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.createWithOptions({
@@ -155,7 +155,7 @@ test.describe(
         });
 
         test(
-            'returns a 500 for a completely empty body instead of a 400',
+            '[TC-008]: returns a 500 for a completely empty body instead of a 400',
             { tag: '@issues' },
             async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-001)');
@@ -166,7 +166,7 @@ test.describe(
             }
         );
 
-        test('ignores unexpected extra fields in the payload', async ({
+        test('[TC-008]: ignores unexpected extra fields in the payload', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.createWithOptions({
@@ -178,7 +178,7 @@ test.describe(
             expect(body.booking).not.toHaveProperty('isAdmin');
         });
 
-        test('stores injection-style inputs instead of erroring', async ({
+        test('[TC-031]: stores injection-style inputs instead of erroring', async ({
             bookingClient,
         }) => {
             for (const scenario of MALICIOUS_PAYLOADS) {

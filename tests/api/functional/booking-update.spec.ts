@@ -18,7 +18,7 @@ test.describe(
         });
 
         test(
-            '[Smoke] fully replaces a booking via PUT with a valid token',
+            '[TC-019]: fully replaces a booking via PUT with a valid token',
             { tag: '@smoke' },
             async ({ bookingClient, authToken }) => {
                 const updatedPayload = generateBookingData({
@@ -38,7 +38,7 @@ test.describe(
             }
         );
 
-        test('partially updates a booking via PATCH, leaving other fields intact', async ({
+        test('[TC-020]: partially updates a booking via PATCH, leaving other fields intact', async ({
             bookingClient,
             authToken,
         }) => {
@@ -56,7 +56,7 @@ test.describe(
             expect(body.totalprice).toBe(DEFAULT_BOOKING_DATA.totalprice);
         });
 
-        test('accepts Basic Auth as an alternative to the token cookie', async ({
+        test('[TC-021]: accepts Basic Auth as an alternative to the token cookie', async ({
             bookingClient,
         }) => {
             const basicAuth = Buffer.from(
@@ -71,7 +71,7 @@ test.describe(
             expect(response.status()).toBe(200);
         });
 
-        test('succeeds with a valid Cookie token even when a fake Authorization header is also present', async ({
+        test('[TC-021]: succeeds with a valid Cookie token even when a fake Authorization header is also present', async ({
             bookingClient,
             authToken,
         }) => {
@@ -86,7 +86,7 @@ test.describe(
             expect(response.status()).toBe(200);
         });
 
-        test('rejects a PUT with an empty body instead of wiping the booking', async ({
+        test('[TC-022]: rejects a PUT with an empty body instead of wiping the booking', async ({
             bookingClient,
             authToken,
         }) => {
@@ -102,7 +102,7 @@ test.describe(
             expect(body.firstname).toBe(DEFAULT_BOOKING_DATA.firstname);
         });
 
-        test('ignores unexpected extra fields on PUT', async ({
+        test('[TC-023]: ignores unexpected extra fields on PUT', async ({
             bookingClient,
             authToken,
         }) => {
@@ -116,7 +116,7 @@ test.describe(
             expect(body).not.toHaveProperty('isAdmin');
         });
 
-        test('ignores unexpected extra fields on PATCH', async ({
+        test('[TC-023]: ignores unexpected extra fields on PATCH', async ({
             bookingClient,
             authToken,
         }) => {
@@ -133,7 +133,7 @@ test.describe(
             expect(body).not.toHaveProperty('isAdmin');
         });
 
-        test('rejects a PUT request with no authorization', async ({
+        test('[TC-024]: rejects a PUT request with no authorization', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.update(
@@ -144,7 +144,7 @@ test.describe(
             expect(response.status()).toBe(403);
         });
 
-        test('rejects a PATCH request with no authorization', async ({
+        test('[TC-024]: rejects a PATCH request with no authorization', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.partialUpdate(bookingId, {
@@ -154,7 +154,7 @@ test.describe(
             expect(response.status()).toBe(403);
         });
 
-        test('rejects a PUT request with a malformed token', async ({
+        test('[TC-024]: rejects a PUT request with a malformed token', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.update(
@@ -166,7 +166,7 @@ test.describe(
             expect(response.status()).toBe(403);
         });
 
-        test('rejects a PUT request with a fake Authorization header', async ({
+        test('[TC-024]: rejects a PUT request with a fake Authorization header', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.updateWithOptions(bookingId, {
@@ -178,7 +178,7 @@ test.describe(
         });
 
         test(
-            'updating a non-existent booking id returns 404, not 405',
+            '[TC-025]: updating a non-existent booking id returns 404, not 405',
             { tag: '@issues' },
             async ({ bookingClient, authToken }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-007)');

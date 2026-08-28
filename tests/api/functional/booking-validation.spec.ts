@@ -18,7 +18,7 @@ const validScenarios = VALIDATION_SCENARIOS.filter(
 test.describe('booking validation', { tag: ['@api', '@regression'] }, () => {
     for (const scenario of knownBugScenarios) {
         test(
-            `Validation: ${scenario.description}`,
+            `[TC-008]: Validation: ${scenario.description}`,
             { tag: '@issues' },
             async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/related/DEFECT-LOG.md');
@@ -33,7 +33,7 @@ test.describe('booking validation', { tag: ['@api', '@regression'] }, () => {
     }
 
     for (const scenario of validScenarios) {
-        test(`Validation: ${scenario.description}`, async ({
+        test(`[TC-008]: Validation: ${scenario.description}`, async ({
             bookingClient,
         }) => {
             const response = await bookingClient.create(

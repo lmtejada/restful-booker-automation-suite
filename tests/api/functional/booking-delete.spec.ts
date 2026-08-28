@@ -15,7 +15,7 @@ test.describe(
         });
 
         test(
-            '[Smoke] deletes a booking with a valid token, then 404s on lookup',
+            '[TC-026]: deletes a booking with a valid token, then 404s on lookup',
             { tag: '@smoke' },
             async ({ bookingClient, authToken }) => {
                 const deleteResponse = await bookingClient.delete(
@@ -29,7 +29,7 @@ test.describe(
             }
         );
 
-        test('rejects a delete request with no authorization', async ({
+        test('[TC-027]: rejects a delete request with no authorization', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.delete(bookingId);
@@ -37,7 +37,7 @@ test.describe(
             expect(response.status()).toBe(403);
         });
 
-        test('rejects a delete request with a malformed token', async ({
+        test('[TC-027]: rejects a delete request with a malformed token', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.delete(
@@ -49,7 +49,7 @@ test.describe(
         });
 
         test(
-            'deleting an already-deleted booking returns 404, not 405',
+            '[TC-028]: deleting an already-deleted booking returns 404, not 405',
             { tag: '@issues' },
             async ({ bookingClient, authToken }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-007)');

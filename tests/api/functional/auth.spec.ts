@@ -8,7 +8,7 @@ test.describe(
     { tag: ['@api', '@regression'] },
     () => {
         test(
-            '[Smoke] valid credentials return a token',
+            '[TC-001]: valid credentials return a token',
             { tag: '@smoke' },
             async ({ authClient }) => {
                 const response = await authClient.login(DEFAULT_CREDENTIALS);
@@ -21,7 +21,9 @@ test.describe(
             }
         );
 
-        test('rejects an incorrect password', async ({ authClient }) => {
+        test('[TC-002]: rejects an incorrect password', async ({
+            authClient,
+        }) => {
             const response = await authClient.login({
                 ...DEFAULT_CREDENTIALS,
                 password: 'wrong-password',
@@ -32,7 +34,9 @@ test.describe(
             expect(body).toEqual({ reason: 'Bad credentials' });
         });
 
-        test('rejects an incorrect username', async ({ authClient }) => {
+        test('[TC-002]: rejects an incorrect username', async ({
+            authClient,
+        }) => {
             const response = await authClient.login({
                 ...DEFAULT_CREDENTIALS,
                 username: 'new-user',
@@ -43,7 +47,7 @@ test.describe(
             expect(body).toEqual({ reason: 'Bad credentials' });
         });
 
-        test('rejects a request missing the username field', async ({
+        test('[TC-002]: rejects a request missing the username field', async ({
             authClient,
         }) => {
             const response = await authClient.login({
@@ -55,7 +59,7 @@ test.describe(
             expect(body).toEqual({ reason: 'Bad credentials' });
         });
 
-        test('rejects a request missing the password field', async ({
+        test('[TC-002]: rejects a request missing the password field', async ({
             authClient,
         }) => {
             const response = await authClient.login({
@@ -68,7 +72,7 @@ test.describe(
         });
 
         test(
-            'returns 415 for a non-JSON Content-Type instead of a misleading Bad credentials',
+            '[TC-003]: returns 415 for a non-JSON Content-Type instead of a misleading Bad credentials',
             { tag: '@issues' },
             async ({ authClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-010)');
@@ -82,7 +86,9 @@ test.describe(
             }
         );
 
-        test('rejects unsupported HTTP methods', async ({ request }) => {
+        test('[TC-004]: rejects unsupported HTTP methods', async ({
+            request,
+        }) => {
             const response = await request.get(AUTH_PATH);
 
             expect(response.status()).toBe(404);

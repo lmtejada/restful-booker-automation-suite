@@ -16,7 +16,7 @@ test.describe(
         });
 
         test(
-            '[Smoke] lists all booking ids',
+            '[TC-010]: lists all booking ids',
             { tag: '@smoke' },
             async ({ bookingClient }) => {
                 const response = await bookingClient.getAll();
@@ -28,7 +28,7 @@ test.describe(
             }
         );
 
-        test('filters by firstname', async ({ bookingClient }) => {
+        test('[TC-011]: filters by firstname', async ({ bookingClient }) => {
             const response = await bookingClient.getAll({
                 params: { firstname: DEFAULT_BOOKING_DATA.firstname },
             });
@@ -38,7 +38,7 @@ test.describe(
             expect(body.map((b) => b.bookingid)).toContain(bookingId);
         });
 
-        test('filters by lastname', async ({ bookingClient }) => {
+        test('[TC-011]: filters by lastname', async ({ bookingClient }) => {
             const response = await bookingClient.getAll({
                 params: { lastname: DEFAULT_BOOKING_DATA.lastname },
             });
@@ -48,7 +48,7 @@ test.describe(
             expect(body.map((b) => b.bookingid)).toContain(bookingId);
         });
 
-        test('filters by firstname and lastname combined', async ({
+        test('[TC-011]: filters by firstname and lastname combined', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.getAll({
@@ -64,7 +64,7 @@ test.describe(
         });
 
         test(
-            'filters by checkin and checkout dates',
+            '[TC-012]: filters by checkin and checkout dates',
             { tag: '@issues' },
             async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-009)');
@@ -83,7 +83,7 @@ test.describe(
         );
 
         test(
-            'filters by checkin alone',
+            '[TC-012]: filters by checkin alone',
             { tag: '@issues' },
             async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-009)');
@@ -100,7 +100,7 @@ test.describe(
             }
         );
 
-        test('returns no matches for an empty query parameter value', async ({
+        test('[TC-013]: returns no matches for an empty query parameter value', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.getAll({
@@ -112,7 +112,7 @@ test.describe(
             expect(body.map((b) => b.bookingid)).not.toContain(bookingId);
         });
 
-        test('ignores an unknown query parameter', async ({
+        test('[TC-013]: ignores an unknown query parameter', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.getAll({
@@ -124,7 +124,9 @@ test.describe(
             expect(body.map((b) => b.bookingid)).toContain(bookingId);
         });
 
-        test('matches names case-sensitively', async ({ bookingClient }) => {
+        test('[TC-014]: matches names case-sensitively', async ({
+            bookingClient,
+        }) => {
             const upperResponse = await bookingClient.getAll({
                 params: {
                     firstname: DEFAULT_BOOKING_DATA.firstname.toUpperCase(),
@@ -148,7 +150,9 @@ test.describe(
             expect(lowerBody.map((b) => b.bookingid)).not.toContain(bookingId);
         });
 
-        test('gets a single booking by id', async ({ bookingClient }) => {
+        test('[TC-015]: gets a single booking by id', async ({
+            bookingClient,
+        }) => {
             const response = await bookingClient.getById(bookingId);
 
             expect(response.status()).toBe(200);
@@ -159,7 +163,7 @@ test.describe(
         });
 
         test(
-            'returns Content-Type: application/xml for an XML response',
+            '[TC-016]: returns Content-Type: application/xml for an XML response',
             { tag: '@issues' },
             async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-008)');
@@ -174,7 +178,7 @@ test.describe(
             }
         );
 
-        test('honors Accept: application/xml for a single booking', async ({
+        test('[TC-016]: honors Accept: application/xml for a single booking', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.getById(bookingId, {
@@ -189,7 +193,7 @@ test.describe(
             );
         });
 
-        test('returns 404 for a booking id that does not exist', async ({
+        test('[TC-017]: returns 404 for a booking id that does not exist', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.getById(999999);
@@ -197,7 +201,7 @@ test.describe(
             expect(response.status()).toBe(404);
         });
 
-        test('returns 404 for a non-numeric booking id', async ({
+        test('[TC-017]: returns 404 for a non-numeric booking id', async ({
             bookingClient,
         }) => {
             const response = await bookingClient.getById('abc');
@@ -206,7 +210,7 @@ test.describe(
         });
 
         test(
-            'rejects a malformed date filter instead of silently matching',
+            '[TC-018]: rejects a malformed date filter instead of silently matching',
             { tag: '@issues' },
             async ({ bookingClient }) => {
                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-011)');

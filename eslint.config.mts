@@ -169,6 +169,25 @@ const config = [
             'playwright/no-standalone-expect': 'error', // Expect must be in test
         },
     },
+    {
+        // Every test case documented in `docs/3. TEST-CASES.md` traces back
+        // to its automation via a [TC-XXX] title prefix. tests/sanity.spec.ts
+        // is intentionally excluded — it's a framework check, not a TC.
+        files: ['tests/api/**/*.spec.ts'],
+        rules: {
+            'playwright/valid-title': [
+                'error',
+                {
+                    mustMatch: {
+                        test: [
+                            '^\\[TC-\\d{3}\\]: ',
+                            'Test titles must start with a [TC-XXX]: id matching their entry in docs/3. TEST-CASES.md',
+                        ],
+                    },
+                },
+            ],
+        },
+    },
 ];
 
 export default config;

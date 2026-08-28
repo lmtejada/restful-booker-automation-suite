@@ -13,7 +13,7 @@ test.describe.serial(
         let bookingId: number;
         let token: string;
 
-        test('1. Authenticate and obtain access token', async ({
+        test('[TC-029]: 1. Authenticate and obtain access token', async ({
             authClient,
         }) => {
             const response = await authClient.login(DEFAULT_CREDENTIALS);
@@ -25,7 +25,9 @@ test.describe.serial(
             token = body.token;
         });
 
-        test('2. Create new booking record', async ({ bookingClient }) => {
+        test('[TC-029]: 2. Create new booking record', async ({
+            bookingClient,
+        }) => {
             const response = await bookingClient.create(DEFAULT_BOOKING_DATA);
 
             expect(response.status()).toBe(200);
@@ -41,7 +43,9 @@ test.describe.serial(
             bookingId = body.bookingid;
         });
 
-        test('3. Query reservation by ID', async ({ bookingClient }) => {
+        test('[TC-029]: 3. Query reservation by ID', async ({
+            bookingClient,
+        }) => {
             const response = await bookingClient.getById(bookingId);
 
             expect(response.status()).toBe(200);
@@ -54,7 +58,7 @@ test.describe.serial(
             );
         });
 
-        test('4. Update reservation via PUT and PATCH', async ({
+        test('[TC-029]: 4. Update reservation via PUT and PATCH', async ({
             bookingClient,
         }) => {
             // Full modification via PUT
@@ -86,7 +90,9 @@ test.describe.serial(
             expect(patchBody.additionalneeds).toBe('Airport Shuttle');
         });
 
-        test('5. Delete record and confirm 404', async ({ bookingClient }) => {
+        test('[TC-029]: 5. Delete record and confirm 404', async ({
+            bookingClient,
+        }) => {
             const deleteResponse = await bookingClient.delete(bookingId, token);
 
             // Restful-Booker returns 201 for DELETE
