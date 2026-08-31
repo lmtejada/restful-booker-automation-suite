@@ -83,7 +83,7 @@ export default defineConfig({
 
     projects: [
         {
-            name: 'restful-booker-api',
+            name: 'Playwright: restful-booker-api',
         },
     ],
 });

@@ -1,4 +1,4 @@
-import { expect, test } from '@fixtures/index.fixture';
+import { expect, test } from '@fixtures/app.fixture';
 
 import { Booking } from '@app-types/app';
 import { DEFAULT_BOOKING_DATA } from '@test-data/factories/booking-data.factory';

@@ -1,4 +1,4 @@
-import { expect, test } from '@fixtures/index.fixture';
+import { expect, test } from '@fixtures/app.fixture';
 
 import { DEFAULT_CREDENTIALS } from '@utils/auth';
 import { AUTH_PATH } from '@utils/constants';

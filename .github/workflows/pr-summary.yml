@@ -21,7 +21,7 @@ jobs:
               uses: the-pr-agent/pr-agent@main
               env:
                   # Required GitHub token for adding comments & updating descriptions
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.REPOSITORY_ACCESS_TOKEN }}
 
                   # Gemini Configuration
                   GOOGLE_AI_STUDIO.GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

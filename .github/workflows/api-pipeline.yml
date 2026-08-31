@@ -1,0 +1,129 @@
+name: API Pipeline
+
+on:
+    push:
+        branches: [main]
+
+jobs:
+    api-pipeline:
+        name: Newman + Playwright + Allure
+        timeout-minutes: 60
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22.22.3
+                  cache: 'npm'
+            - name: Install dependencies
+              run: npm ci
+
+            # Cheapest, fastest check — gates the rest of the pipeline on basic API
+            # reachability before spending minutes on the full Playwright suite.
+            # environment.json is gitignored (local-only, like .env.dev) so a fresh CI
+            # checkout never has it — this runs against the committed template instead,
+            # with --env-var overriding baseUrl/admin creds from the same vars/secrets
+            # the Playwright step below uses. --reporter-allure-resultsDir points at the
+            # same folder allure-playwright writes to, so one `allure generate` call
+            # covers both suites.
+            - name: Run Newman (Postman collection)
+              id: newman
+              run: |
+                  npx newman run src/collections/restful-booker.postman_collection.json \
+                    -e src/collections/environment.template.json \
+                    --env-var "baseUrl=${{ vars.API_URL }}" \
+                    --env-var "admin_username=${{ secrets.ADMIN_USERNAME }}" \
+                    --env-var "admin_password=${{ secrets.ADMIN_PASSWORD }}" \
+                    -r cli,htmlextra,allure \
+                    --reporter-htmlextra-export reports/newman/report.html \
+                    --reporter-allure-resultsDir reports/allure-results
+
+            - name: Run Playwright tests
+              id: run-playwright
+              run: npx playwright test
+              env:
+                  API_URL: ${{ vars.API_URL }}
+                  ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+                  ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+
+            - name: Upload Newman report artifact
+              if: ${{ !cancelled() }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: newman-report
+                  path: reports/newman/
+                  retention-days: 30
+
+            # Gated on Newman having run, not Playwright — Newman's own results now
+            # feed reports/allure-results too, so a report is still worth generating
+            # (showing Newman's failure) even when it blocked Playwright from running.
+            - name: Generate Allure report
+              if: ${{ !cancelled() && steps.newman.outcome != 'skipped' }}
+              run: npm run allure:generate
+
+            - name: Upload Allure report artifact
+              if: ${{ !cancelled() && steps.newman.outcome != 'skipped' }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: allure-report
+                  path: reports/allure-report/
+                  retention-days: 30
+
+            # report/<run_number>/ is archived per run so history survives; report/index.html
+            # lists them newest-first. Only the last REPORT_HISTORY_LIMIT runs are kept.
+            - name: Checkout gh-pages
+              if: ${{ !cancelled() && steps.newman.outcome != 'skipped' }}
+              uses: actions/checkout@v4
+              with:
+                  ref: gh-pages
+                  path: gh-pages
+
+            - name: Archive report and update history index
+              id: publish-history
+              if: ${{ !cancelled() && steps.newman.outcome != 'skipped' }}
+              env:
+                  REPORT_HISTORY_LIMIT: 20
+                  # Copies this run's Allure report into report/<run_number>/ on the gh-pages
+                  # branch, prunes runs beyond REPORT_HISTORY_LIMIT, regenerates report/index.html
+                  # with links to all retained runs (newest first), then commits and pushes,
+                  # skipping the commit if nothing changed
+              run: |
+                  set -euo pipefail
+                  cd gh-pages
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  RUN_DIR="report/${{ github.run_number }}"
+                  rm -rf "$RUN_DIR"
+                  mkdir -p "$RUN_DIR"
+                  cp -r ../reports/allure-report/. "$RUN_DIR"/
+
+                  # Prune runs beyond the retention limit (newest dirs first).
+                  (cd report && ls -1dt */ 2>/dev/null | tail -n +$((REPORT_HISTORY_LIMIT + 1)) | xargs -r rm -rf)
+
+                  {
+                      echo "<!DOCTYPE html><html><head><title>Allure Report History</title></head><body>"
+                      echo "<h1>Allure Report History</h1><ul>"
+                      for d in $(cd report && ls -1dt */ | sed 's#/##'); do
+                          echo "<li><a href=\"$d/\">Run $d</a></li>"
+                      done
+                      echo "</ul></body></html>"
+                  } >report/index.html
+
+                  git add report
+                  if git diff --cached --quiet; then
+                      echo "No report changes to commit"
+                  else
+                      git commit -m "Publish Allure report for run ${{ github.run_number }}"
+                      git push
+                  fi
+
+            # Chained to the publish step's own outcome, not just !cancelled(), so a failed
+            # push (e.g. a gh-pages race) doesn't print a link to a report that isn't there.
+            - name: Summarize report URL
+              if: ${{ !cancelled() && steps.publish-history.outcome == 'success' }}
+              run: |
+                  echo "📊 [View this run's Allure report](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report/${{ github.run_number }}/)" >> "$GITHUB_STEP_SUMMARY"
+                  echo "🗂️ [Report history](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report/)" >> "$GITHUB_STEP_SUMMARY"

@@ -15,6 +15,7 @@ npm run test:smoke                   # --grep @smoke
 npm run test:regression              # --grep @regression
 npm run test:api                     # --grep @api
 npm run test:issues                  # --grep @issues (known-bug tests, see below)
+npm run test:integration             # --grep @integration (cross-endpoint serial flows)
 npm run test:ci                      # single-worker run
 
 npm run lint / lint:fix
@@ -27,7 +28,7 @@ npm run allure:report                # generate + open the Allure report
 
 There is no build step and no browser install — this is an API-only Playwright suite (`request` fixture, `APIRequestContext`), so `npx playwright install` is never needed.
 
-Always run `lint`, `typecheck`, and the relevant spec file(s) after touching `src/` or `tests/` — CI (`on-branch-push.yml`) gates on lint + typecheck + `@smoke` on every push, and `playwright.yml` runs the full suite on push to `main`.
+Always run `lint`, `typecheck`, and the relevant spec file(s) after touching `src/` or `tests/` — CI (`on-branch-push.yml`) gates on lint + typecheck + `@smoke` on every push, and `api-pipeline.yml` runs Newman, then the full Playwright suite, then generates and publishes an Allure report, on push to `main`.
 
 ## Architecture
 
@@ -75,7 +76,7 @@ Fixtures resolve lazily regardless of how they were composed: a test that only d
 
 `src/fixtures/auth.fixture.ts` extends Playwright's `test`/`expect` with a worker-scoped `authToken` fixture that authenticates once per worker (via its own `APIRequestContext`, independent of the per-test `request` fixture) and retries once on failure. Specs that need auth (`booking-update.spec.ts`, `booking-delete.spec.ts`) destructure `authToken` alongside `bookingClient` from the shared `@fixtures/index.fixture` import. Don't call `POST /auth` directly in a new test unless you have a reason to bypass the shared token or `AuthClient`.
 
-Credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) come from env vars everywhere — never hardcode `admin`/`password123` in a spec.
+Credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) come from env vars everywhere — never hardcode in a spec.
 
 ### Test folder layout
 

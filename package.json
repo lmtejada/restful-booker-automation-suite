@@ -15,6 +15,7 @@
         "test:regression": "npx playwright test --grep @regression",
         "test:api": "npx playwright test --grep @api",
         "test:issues": "npx playwright test --grep @issues",
+        "test:integration": "npx playwright test --grep @integration",
         "report": "npx playwright show-report",
         "typecheck": "tsc --noEmit",
         "prepare": "husky",
@@ -22,6 +23,7 @@
         "newman:verbose": "newman run src/collections/restful-booker.postman_collection.json -e src/collections/environment.json --verbose",
         "newman:bail": "newman run src/collections/restful-booker.postman_collection.json -e src/collections/environment.json --bail",
         "newman:html": "newman run src/collections/restful-booker.postman_collection.json -e src/collections/environment.json -r htmlextra --reporter-htmlextra-export reports/newman/report.html",
+        "newman:allure": "newman run src/collections/restful-booker.postman_collection.json -e src/collections/environment.json -r cli,allure --reporter-allure-resultsDir reports/allure-results",
         "allure:generate": "allure generate reports/allure-results --clean -o reports/allure-report",
         "allure:open": "allure open reports/allure-report",
         "allure:report": "npm run allure:generate && npm run allure:open"
@@ -33,6 +35,8 @@
         "@playwright/test": "^1.61.1",
         "@stylistic/eslint-plugin": "^5.10.0",
         "@types/node": "^26.1.1",
+        "ajv": "^8.20.0",
+        "ajv-formats": "^3.0.1",
         "allure-commandline": "^2.43.0",
         "allure-playwright": "^3.10.2",
         "eslint": "^10.7.0",
@@ -46,6 +50,7 @@
         "jiti": "^2.7.0",
         "lint-staged": "^17.0.8",
         "newman": "^6.2.2",
+        "newman-reporter-allure": "^3.11.0",
         "newman-reporter-htmlextra": "^1.23.1",
         "prettier": "^3.9.5",
         "typescript-eslint": "^8.64.0"
