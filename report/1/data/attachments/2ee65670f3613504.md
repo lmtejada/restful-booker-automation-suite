@@ -1,0 +1,185 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: api/functional/booking-create.spec.ts >> create booking — POST /booking >> [TC-007]: returns Content-Type: application/xml for an XML response
+- Location: tests/api/functional/booking-create.spec.ts:36:13
+
+# Error details
+
+```
+Error: expect(received).toContain(expected) // indexOf
+
+Expected substring: "application/xml"
+Received string:    "text/html; charset=utf-8"
+```
+
+# Test source
+
+```ts
+  1   | import { expect, test } from '@fixtures/app.fixture';
+  2   | 
+  3   | import {
+  4   |     DEFAULT_BOOKING_DATA,
+  5   |     generateBookingData,
+  6   |     MALICIOUS_PAYLOADS,
+  7   | } from '@test-data/factories/booking-data.factory';
+  8   | 
+  9   | test.describe(
+  10  |     'create booking — POST /booking',
+  11  |     { tag: ['@api', '@regression'] },
+  12  |     () => {
+  13  |         test(
+  14  |             '[TC-005]: creates a booking from a valid JSON payload',
+  15  |             { tag: '@smoke' },
+  16  |             async ({ bookingClient }) => {
+  17  |                 const response =
+  18  |                     await bookingClient.create(DEFAULT_BOOKING_DATA);
+  19  | 
+  20  |                 expect(response.status()).toBe(200);
+  21  |                 const body = await response.json();
+  22  | 
+  23  |                 expect(body).toHaveProperty('bookingid');
+  24  |                 expect(body.booking.firstname).toBe(
+  25  |                     DEFAULT_BOOKING_DATA.firstname
+  26  |                 );
+  27  |                 expect(body.booking.lastname).toBe(
+  28  |                     DEFAULT_BOOKING_DATA.lastname
+  29  |                 );
+  30  |                 expect(body.booking.totalprice).toBe(
+  31  |                     DEFAULT_BOOKING_DATA.totalprice
+  32  |                 );
+  33  |             }
+  34  |         );
+  35  | 
+  36  |         test(
+  37  |             '[TC-007]: returns Content-Type: application/xml for an XML response',
+  38  |             { tag: '@issues' },
+  39  |             async ({ bookingClient }) => {
+  40  |                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-008)');
+  41  | 
+  42  |                 const response = await bookingClient.createWithOptions({
+  43  |                     headers: {
+  44  |                         'Content-Type': 'text/xml',
+  45  |                         Accept: 'application/xml',
+  46  |                     },
+  47  |                     data: `
+  48  |                         <booking>
+  49  |                             <firstname>${DEFAULT_BOOKING_DATA.firstname}</firstname>
+  50  |                             <lastname>${DEFAULT_BOOKING_DATA.lastname}</lastname>
+  51  |                             <totalprice>${DEFAULT_BOOKING_DATA.totalprice}</totalprice>
+  52  |                             <depositpaid>${DEFAULT_BOOKING_DATA.depositpaid}</depositpaid>
+  53  |                             <bookingdates>
+  54  |                                 <checkin>${DEFAULT_BOOKING_DATA.bookingdates.checkin}</checkin>
+  55  |                                 <checkout>${DEFAULT_BOOKING_DATA.bookingdates.checkout}</checkout>
+  56  |                             </bookingdates>
+  57  |                         </booking>`,
+  58  |                 });
+  59  | 
+> 60  |                 expect(response.headers()['content-type']).toContain(
+      |                                                            ^ Error: expect(received).toContain(expected) // indexOf
+  61  |                     'application/xml'
+  62  |                 );
+  63  |             }
+  64  |         );
+  65  | 
+  66  |         test('[TC-006]: creates a booking from an XML payload', async ({
+  67  |             bookingClient,
+  68  |         }) => {
+  69  |             const xmlPayload = `
+  70  |                 <booking>
+  71  |                     <firstname>${DEFAULT_BOOKING_DATA.firstname}</firstname>
+  72  |                     <lastname>${DEFAULT_BOOKING_DATA.lastname}</lastname>
+  73  |                     <totalprice>${DEFAULT_BOOKING_DATA.totalprice}</totalprice>
+  74  |                     <depositpaid>${DEFAULT_BOOKING_DATA.depositpaid}</depositpaid>
+  75  |                     <bookingdates>
+  76  |                         <checkin>${DEFAULT_BOOKING_DATA.bookingdates.checkin}</checkin>
+  77  |                         <checkout>${DEFAULT_BOOKING_DATA.bookingdates.checkout}</checkout>
+  78  |                     </bookingdates>
+  79  |                 </booking>`;
+  80  | 
+  81  |             const response = await bookingClient.createWithOptions({
+  82  |                 headers: {
+  83  |                     'Content-Type': 'text/xml',
+  84  |                     Accept: 'application/xml',
+  85  |                 },
+  86  |                 data: xmlPayload,
+  87  |             });
+  88  | 
+  89  |             expect(response.status()).toBe(200);
+  90  | 
+  91  |             const body = await response.text();
+  92  |             expect(body).toContain('<created-booking>');
+  93  |             expect(body).toContain(
+  94  |                 `<firstname>${DEFAULT_BOOKING_DATA.firstname}</firstname>`
+  95  |             );
+  96  |         });
+  97  | 
+  98  |         test(
+  99  |             '[TC-008]: accepts an illogical date range where checkin is after checkout',
+  100 |             { tag: '@issues' },
+  101 |             async ({ bookingClient }) => {
+  102 |                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-005)');
+  103 | 
+  104 |                 const response = await bookingClient.create(
+  105 |                     generateBookingData({
+  106 |                         bookingdates: {
+  107 |                             checkin: '2026-05-10',
+  108 |                             checkout: '2026-05-01',
+  109 |                         },
+  110 |                     })
+  111 |                 );
+  112 | 
+  113 |                 expect(response.status()).toBe(400);
+  114 |             }
+  115 |         );
+  116 | 
+  117 |         test(
+  118 |             '[TC-009]: returns a 500 for an unsupported Content-Type instead of a 4xx',
+  119 |             { tag: '@issues' },
+  120 |             async ({ bookingClient }) => {
+  121 |                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-006)');
+  122 | 
+  123 |                 const response = await bookingClient.createWithOptions({
+  124 |                     headers: { 'Content-Type': 'application/yaml' },
+  125 |                     data: 'firstname: Jim',
+  126 |                 });
+  127 | 
+  128 |                 expect(response.status()).toBe(415);
+  129 |             }
+  130 |         );
+  131 | 
+  132 |         test(
+  133 |             '[TC-009]: returns a 500 for a text/plain Content-Type instead of a 4xx',
+  134 |             { tag: '@issues' },
+  135 |             async ({ bookingClient }) => {
+  136 |                 test.fail(true, 'Known bug — see docs/DEFECT-LOG.md (BUG-006)');
+  137 | 
+  138 |                 const response = await bookingClient.createWithOptions({
+  139 |                     headers: { 'Content-Type': 'text/plain' },
+  140 |                     data: JSON.stringify(DEFAULT_BOOKING_DATA),
+  141 |                 });
+  142 | 
+  143 |                 expect(response.status()).toBe(415);
+  144 |             }
+  145 |         );
+  146 | 
+  147 |         test('[TC-008]: rejects syntactically malformed JSON with a 400', async ({
+  148 |             bookingClient,
+  149 |         }) => {
+  150 |             const response = await bookingClient.createWithOptions({
+  151 |                 data: '{"firstname": "Jim", "lastname": "Brown"',
+  152 |             });
+  153 | 
+  154 |             expect(response.status()).toBe(400);
+  155 |         });
+  156 | 
+  157 |         test(
+  158 |             '[TC-008]: returns a 500 for a completely empty body instead of a 400',
+  159 |             { tag: '@issues' },
+  160 |             async ({ bookingClient }) => {
+```

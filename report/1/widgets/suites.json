@@ -1,0 +1,1 @@
+{"total":2,"items":[{"uid":"c8eefaa414e196fb4de1a733c023361d","name":"Playwright: restful-booker-api","statistic":{"failed":0,"broken":0,"skipped":0,"passed":80,"unknown":0,"total":80}},{"uid":"be594c1cdd52d639547418fc335afc3f","name":"Newman: Restful Booker API","statistic":{"failed":0,"broken":0,"skipped":0,"passed":7,"unknown":0,"total":7}}]}
