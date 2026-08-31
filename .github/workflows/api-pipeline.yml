@@ -22,9 +22,23 @@ jobs:
 
             # Cheapest, fastest check — gates the rest of the pipeline on basic API
             # reachability before spending minutes on the full Playwright suite.
+            # environment.json is gitignored (local-only, like .env.dev) so a fresh CI
+            # checkout never has it — this runs against the committed template instead,
+            # with --env-var overriding baseUrl/admin creds from the same vars/secrets
+            # the Playwright step below uses. --reporter-allure-resultsDir points at the
+            # same folder allure-playwright writes to, so one `allure generate` call
+            # covers both suites.
             - name: Run Newman (Postman collection)
               id: newman
-              run: npm run newman:html
+              run: |
+                  npx newman run src/collections/restful-booker.postman_collection.json \
+                    -e src/collections/environment.template.json \
+                    --env-var "baseUrl=${{ vars.API_URL }}" \
+                    --env-var "admin_username=${{ secrets.ADMIN_USERNAME }}" \
+                    --env-var "admin_password=${{ secrets.ADMIN_PASSWORD }}" \
+                    -r cli,htmlextra,allure \
+                    --reporter-htmlextra-export reports/newman/report.html \
+                    --reporter-allure-resultsDir reports/allure-results
 
             - name: Run Playwright tests
               id: run-playwright
@@ -42,14 +56,15 @@ jobs:
                   path: reports/newman/
                   retention-days: 30
 
-            # Only meaningful once Playwright actually ran — skipped (not failed) when
-            # Newman failed first and blocked this step via the default fail-fast behavior.
+            # Gated on Newman having run, not Playwright — Newman's own results now
+            # feed reports/allure-results too, so a report is still worth generating
+            # (showing Newman's failure) even when it blocked Playwright from running.
             - name: Generate Allure report
-              if: ${{ !cancelled() && steps.run-playwright.outcome != 'skipped' }}
+              if: ${{ !cancelled() && steps.newman.outcome != 'skipped' }}
               run: npm run allure:generate
 
             - name: Upload Allure report artifact
-              if: ${{ !cancelled() && steps.run-playwright.outcome != 'skipped' }}
+              if: ${{ !cancelled() && steps.newman.outcome != 'skipped' }}
               uses: actions/upload-artifact@v4
               with:
                   name: allure-report
@@ -59,7 +74,7 @@ jobs:
             # report/<run_number>/ is archived per run so history survives; report/index.html
             # lists them newest-first. Only the last REPORT_HISTORY_LIMIT runs are kept.
             - name: Checkout gh-pages
-              if: ${{ !cancelled() && steps.run-playwright.outcome != 'skipped' }}
+              if: ${{ !cancelled() && steps.newman.outcome != 'skipped' }}
               uses: actions/checkout@v4
               with:
                   ref: gh-pages
@@ -67,7 +82,7 @@ jobs:
 
             - name: Archive report and update history index
               id: publish-history
-              if: ${{ !cancelled() && steps.run-playwright.outcome != 'skipped' }}
+              if: ${{ !cancelled() && steps.newman.outcome != 'skipped' }}
               env:
                   REPORT_HISTORY_LIMIT: 20
                   # Copies this run's Allure report into report/<run_number>/ on the gh-pages

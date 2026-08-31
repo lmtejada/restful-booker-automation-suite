@@ -27,7 +27,7 @@ What this suite is targeting, by deliverable:
 | Aspect Details      | Description                                                                                                                                                                                                                                                                                                                                             |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Testing layers**  | Postman/Newman collection, Playwright `APIRequestContext` suite (no browser, 75 tests), Pact consumer contracts (not started) — see [Project Goals](#project-goals)                                                                                                                                                                                     |
-| **CI**              | `on-branch-push.yml` (lint + typecheck + `@smoke`, every push) and `api-pipeline.yml` (Newman + Playwright + Allure, push to `main`) are live — see [CI/CD](#cicd)                                                                                                                                                                                      |
+| **CI**              | `on-branch-push.yml` (lint + typecheck + `@smoke`, every push) and `api-pipeline.yml` (Newman + Playwright + Allure, push to `main`) are live; reports published to [lmtejada.github.io/restful-booker-automation-suite](https://lmtejada.github.io/restful-booker-automation-suite/) — see [CI/CD](#cicd)                                              |
 | **Git conventions** | Conventional Commits + `feat/`/`fix/`/`release/`/`epic/` branch prefixes, enforced via Husky hooks (see [Code Quality](#code-quality))                                                                                                                                                                                                                  |
 | **Path aliases**    | `@pages`, `@fixtures`, `@utils`, `@enums`, `@test-data`, `@app-types` — no relative `../../../` imports                                                                                                                                                                                                                                                 |
 | **Env config**      | `.env.<name>` files, selected via `ENVIRONMENT` (defaults to `dev`); CI supplies vars through workflow `env:` blocks instead                                                                                                                                                                                                                            |
@@ -72,7 +72,7 @@ restful-booker-automation-suite/
 │   ├── commit-msg                 # Runs commitlint against Conventional Commits format
 │   └── pre-push                   # Blocks pushing from a branch without a feat/fix/release/epic prefix
 ├── reports/                       # All generated test/report output — git-ignored as a whole
-│   ├── allure-results/            # Raw Allure result JSON (from allure-playwright, later newman-reporter-allure too)
+│   ├── allure-results/            # Raw Allure result JSON, from both allure-playwright and newman-reporter-allure
 │   ├── allure-report/             # Static HTML report generated via `allure generate`
 │   ├── newman/                    # HTML report from `npm run newman:html`
 │   └── test-results/              # Playwright trace/screenshot/video artifacts (outputDir)
@@ -123,26 +123,27 @@ restful-booker-automation-suite/
 
 ## Available Scripts
 
-| Command                                                     | Description                                                                                                                |
-| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `npm test`                                                  | Run the full suite                                                                                                         |
-| `npm run test:ci`                                           | Single-worker run — not currently wired to any CI workflow; `api-pipeline.yml` runs `npx playwright test` directly instead |
-| `npm run test:smoke`                                        | Run tests tagged `@smoke`                                                                                                  |
-| `npm run test:regression`                                   | Run tests tagged `@regression`                                                                                             |
-| `npm run test:api`                                          | Run tests tagged `@api`                                                                                                    |
-| `npm run test:issues`                                       | Run tests tagged `@issues` — the known-bug `test.fail()` scenarios documented in `docs/4. DEFECT-LOG.md`                   |
-| `npm run test:debug`                                        | Run in Playwright's debug/inspector mode                                                                                   |
-| `npm run report`                                            | Open the last HTML report                                                                                                  |
-| `npm run lint` / `lint:fix`                                 | Lint (and auto-fix) the codebase                                                                                           |
-| `npm run typecheck`                                         | Type-check with `tsc --noEmit` (no build output)                                                                           |
-| `npm run format`                                            | Format the codebase with Prettier                                                                                          |
-| `npm run newman:run`                                        | Run the Postman collection via Newman CLI                                                                                  |
-| `npm run newman:verbose`                                    | Run with `--verbose` — detailed CLI output, including raw request/response bodies, headers, and cookies for every call     |
-| `npm run newman:bail`                                       | Run with `--bail` — stops at the first test failure instead of continuing through the whole collection                     |
-| `npm run newman:html`                                       | Run and generate an HTML report via `newman-reporter-htmlextra`, written to `reports/newman/report.html`                   |
-| `npm run allure:generate` / `allure:open` / `allure:report` | Generate and/or open the Allure HTML report from `reports/allure-results/`                                                 |
+| Command                                                     | Description                                                                                                                                                           |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm test`                                                  | Run the full suite                                                                                                                                                    |
+| `npm run test:ci`                                           | Single-worker run — not currently wired to any CI workflow; `api-pipeline.yml` runs `npx playwright test` directly instead                                            |
+| `npm run test:smoke`                                        | Run tests tagged `@smoke`                                                                                                                                             |
+| `npm run test:regression`                                   | Run tests tagged `@regression`                                                                                                                                        |
+| `npm run test:api`                                          | Run tests tagged `@api`                                                                                                                                               |
+| `npm run test:issues`                                       | Run tests tagged `@issues` — the known-bug `test.fail()` scenarios documented in `docs/4. DEFECT-LOG.md`                                                              |
+| `npm run test:debug`                                        | Run in Playwright's debug/inspector mode                                                                                                                              |
+| `npm run report`                                            | Open the last HTML report                                                                                                                                             |
+| `npm run lint` / `lint:fix`                                 | Lint (and auto-fix) the codebase                                                                                                                                      |
+| `npm run typecheck`                                         | Type-check with `tsc --noEmit` (no build output)                                                                                                                      |
+| `npm run format`                                            | Format the codebase with Prettier                                                                                                                                     |
+| `npm run newman:run`                                        | Run the Postman collection via Newman CLI                                                                                                                             |
+| `npm run newman:verbose`                                    | Run with `--verbose` — detailed CLI output, including raw request/response bodies, headers, and cookies for every call                                                |
+| `npm run newman:bail`                                       | Run with `--bail` — stops at the first test failure instead of continuing through the whole collection                                                                |
+| `npm run newman:html`                                       | Run and generate an HTML report via `newman-reporter-htmlextra`, written to `reports/newman/report.html`                                                              |
+| `npm run newman:allure`                                     | Run and write Allure results via `newman-reporter-allure` into `reports/allure-results/` — the same folder Playwright writes to, so one `allure generate` covers both |
+| `npm run allure:generate` / `allure:open` / `allure:report` | Generate and/or open the Allure HTML report from `reports/allure-results/`                                                                                            |
 
-This is an API-only suite (no `page`/browser fixture), so there are no per-browser scripts (`test:chromium`, etc.) — every test runs against the single `restful-booker-api` project in `playwright.config.ts`. Tag-based scripts rely on `@tag` annotations passed as a test's/describe's `{ tag: ... }` option, not string suffixes in the title. Newman scripts point at [src/collections/restful-booker.postman_collection.json](src/collections/restful-booker.postman_collection.json) and `src/collections/environment.json` (copy from [environment.template.json](src/collections/environment.template.json) if it doesn't exist locally).
+This is an API-only suite (no `page`/browser fixture), so there are no per-browser scripts (`test:chromium`, etc.) — every test runs against the single `Playwright: restful-booker-api` project in `playwright.config.ts` (named so its Allure suite is distinguishable from Newman's). Tag-based scripts rely on `@tag` annotations passed as a test's/describe's `{ tag: ... }` option, not string suffixes in the title. Newman scripts point at [src/collections/restful-booker.postman_collection.json](src/collections/restful-booker.postman_collection.json) and `src/collections/environment.json` (copy from [environment.template.json](src/collections/environment.template.json) if it doesn't exist locally).
 
 ---
 
@@ -165,3 +166,7 @@ Three workflow files under [.github/workflows/](.github/workflows/):
 | `pr-summary.yml`     | PR opened/reopened/ready-for-review, issue comments | Third-party PR Agent bot (auto-describes PRs) — not a test runner                                      | N/A                                                                                                                                                                 |
 
 Update the `env:` blocks in `on-branch-push.yml` and `api-pipeline.yml` with this project's environment variables, and configure the matching repo secrets/variables (Settings → Secrets and variables → Actions) before relying on either workflow.
+
+`environment.json` is git-ignored (local-only, like `.env.dev`), so `api-pipeline.yml`'s Newman step runs against the committed `environment.template.json` instead, overriding `baseUrl`/`admin_username`/`admin_password` at runtime via `--env-var` from the same `vars.API_URL`/`secrets.ADMIN_USERNAME`/`secrets.ADMIN_PASSWORD` the Playwright step uses.
+
+**Published reports:** [lmtejada.github.io/restful-booker-automation-suite](https://lmtejada.github.io/restful-booker-automation-suite/) — the latest Allure report lives at [.../report/](https://lmtejada.github.io/restful-booker-automation-suite/report/) after `api-pipeline.yml`'s first successful run on `main`; run history (last 20 runs) is linked from there.

@@ -1,7 +1,7 @@
 {
     "info": {
         "_postman_id": "6e82e016-0ccb-4347-b879-f2f19c9be181",
-        "name": "RestfulBookerAPI",
+        "name": "Newman: Restful Booker API",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "1504698",
         "_collection_link": "https://go.postman.co/collection/1504698-6e82e016-0ccb-4347-b879-f2f19c9be181?source=collection_link"
