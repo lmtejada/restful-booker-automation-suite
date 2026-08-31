@@ -19,6 +19,14 @@ export interface Booking {
     };
     additionalneeds?: string;
 }
+export interface CreatedBookingResponse {
+    bookingid: number;
+    booking: Booking;
+}
+
+export interface BookingListItem {
+    bookingid: number;
+}
 
 // A clean alias for the Playwright APIRequestContext post() options type, for use in our API clients and tests.
 export type RequestOptions = Parameters<APIRequestContext['post']>[1];
