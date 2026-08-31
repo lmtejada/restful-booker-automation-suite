@@ -15,6 +15,7 @@ npm run test:smoke                   # --grep @smoke
 npm run test:regression              # --grep @regression
 npm run test:api                     # --grep @api
 npm run test:issues                  # --grep @issues (known-bug tests, see below)
+npm run test:integration             # --grep @integration (cross-endpoint serial flows)
 npm run test:ci                      # single-worker run
 
 npm run lint / lint:fix
@@ -27,7 +28,7 @@ npm run allure:report                # generate + open the Allure report
 
 There is no build step and no browser install — this is an API-only Playwright suite (`request` fixture, `APIRequestContext`), so `npx playwright install` is never needed.
 
-Always run `lint`, `typecheck`, and the relevant spec file(s) after touching `src/` or `tests/` — CI (`on-branch-push.yml`) gates on lint + typecheck + `@smoke` on every push, and `playwright.yml` runs the full suite on push to `main`.
+Always run `lint`, `typecheck`, and the relevant spec file(s) after touching `src/` or `tests/` — CI (`on-branch-push.yml`) gates on lint + typecheck + `@smoke` on every push, and `api-pipeline.yml` runs Newman, then the full Playwright suite, then generates and publishes an Allure report, on push to `main`.
 
 ## Architecture
 

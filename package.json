@@ -15,6 +15,7 @@
         "test:regression": "npx playwright test --grep @regression",
         "test:api": "npx playwright test --grep @api",
         "test:issues": "npx playwright test --grep @issues",
+        "test:integration": "npx playwright test --grep @integration",
         "report": "npx playwright show-report",
         "typecheck": "tsc --noEmit",
         "prepare": "husky",
