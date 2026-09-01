@@ -66,7 +66,7 @@ A GET request testing an endpoint that only makes sense as a resource path (e.g.
 
 ### Fixture composition: mergeTests, not one big file
 
-`src/fixtures/index.fixture.ts` is the fixture import for every spec (`import { test, expect } from '@fixtures/index.fixture'`). It combines two independently-defined fixture files with Playwright's `mergeTests`, neither of which imports the other:
+`src/fixtures/app.fixture.ts` is the fixture import for every spec (`import { test, expect } from '@fixtures/app.fixture'`). It combines two independently-defined fixture files with Playwright's `mergeTests`, neither of which imports the other:
 
 - `src/fixtures/api-clients.fixture.ts` — test-scoped `bookingClient`/`authClient`.
 - `src/fixtures/auth.fixture.ts` — the worker-scoped `authToken` (see below).
@@ -75,7 +75,7 @@ Fixtures resolve lazily regardless of how they were composed: a test that only d
 
 ### Auth: worker-scoped fixture, not per-test
 
-`src/fixtures/auth.fixture.ts` extends Playwright's `test`/`expect` with a worker-scoped `authToken` fixture that authenticates once per worker (via its own `APIRequestContext`, independent of the per-test `request` fixture) and retries once on failure. Specs that need auth (`booking-update.spec.ts`, `booking-delete.spec.ts`) destructure `authToken` alongside `bookingClient` from the shared `@fixtures/index.fixture` import. Don't call `POST /auth` directly in a new test unless you have a reason to bypass the shared token or `AuthClient`.
+`src/fixtures/auth.fixture.ts` extends Playwright's `test`/`expect` with a worker-scoped `authToken` fixture that authenticates once per worker (via its own `APIRequestContext`, independent of the per-test `request` fixture) and retries once on failure. Specs that need auth (`booking-update.spec.ts`, `booking-delete.spec.ts`) destructure `authToken` alongside `bookingClient` from the shared `@fixtures/app.fixture` import. Don't call `POST /auth` directly in a new test unless you have a reason to bypass the shared token or `AuthClient`.
 
 Credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) come from env vars everywhere — never hardcode in a spec.
 
@@ -97,9 +97,11 @@ One thing that isn't obvious when adding a new interaction: an interaction whose
 
 Shared matcher helpers (`bookingDatesMatcher`, `bookingBodyMatcher`, `withMockClient`) live in `src/utils/contract-helpers.ts`, deliberately free of `expect`/`test` — test-only concerns stay in the spec files.
 
+`playwright.config.ts` deliberately doesn't set `fullyParallel` — it was briefly enabled and silently broke `PactV3`'s interaction accumulation (each test got its own worker process, so state stopped being shared). Check `docs/2. TEST-FRAMEWORK.md`'s 2026-09-01 decision log entries before turning it back on.
+
 ### Conventions worth knowing before adding a test
 
-- Path aliases (`@fixtures/*`, `@clients/*`, `@utils/*`, `@test-data/*`, `@app-types/*`, `@enums/*`, `@pages/*`) resolve to `src/*` subfolders — no relative `../../../` imports.
+- Path aliases (`@fixtures/*`, `@clients/*`, `@utils/*`, `@test-data/*`, `@app-types/*`) resolve to `src/*` subfolders — no relative `../../../` imports.
 - Tags (`@smoke`, `@regression`, `@api`, `@issues`, `@integration`, `@contract`) map to `npm run test:*` scripts via `--grep`; a test can carry multiple (`{ tag: ['@api', '@regression'] }`).
 - `Nullable<T>` (`src/types/app.ts`) is the override type for negative-test payloads (every field also accepts `null`/`undefined`); `generateBookingData()`'s param type is widened to `Nullable<Booking> | Record<string, unknown>` to also allow deliberately wrong-typed values (e.g. `totalprice: 'one-hundred'`) for type-validation scenarios.
 - ESLint enforces explicit function return types, import ordering/grouping, no hard waits, web-first assertions, and no `console`/`test.only` — run `npm run lint` before considering a change done.

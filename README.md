@@ -28,8 +28,8 @@ What this suite is targeting, by deliverable:
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Testing layers**  | Postman/Newman collection, Playwright `APIRequestContext` suite (no browser, 78 tests), Pact consumer + provider contract tests ([src/contracts/](src/contracts/), `npm run test:contract`) — see [Project Goals](#project-goals)                                                                                                                       |
 | **CI**              | `on-branch-push.yml` (lint + typecheck + `@smoke`, every push) and `api-pipeline.yml` (Newman + Playwright + Allure, push to `main`) are live; reports published to [lmtejada.github.io/restful-booker-automation-suite](https://lmtejada.github.io/restful-booker-automation-suite/) — see [CI/CD](#cicd)                                              |
-| **Git conventions** | Conventional Commits + `feat/`/`fix/`/`release/`/`epic/` branch prefixes, enforced via Husky hooks (see [Code Quality](#code-quality))                                                                                                                                                                                                                  |
-| **Path aliases**    | `@pages`, `@fixtures`, `@utils`, `@enums`, `@test-data`, `@app-types` — no relative `../../../` imports                                                                                                                                                                                                                                                 |
+| **Git conventions** | Conventional Commits + `feat/`, `fix/`, `release/`, `epic/` branch prefixes, enforced via Husky hooks (see [Code Quality](#code-quality))                                                                                                                                                                                                               |
+| **Path aliases**    | `@fixtures`, `@clients`, `@utils`, `@test-data`, `@app-types` — no relative `../../../` imports                                                                                                                                                                                                                                                         |
 | **Env config**      | `.env.<name>` files, selected via `ENVIRONMENT` (defaults to `dev`); CI supplies vars through workflow `env:` blocks instead                                                                                                                                                                                                                            |
 | **Docs**            | [docs/1. API-OVERVIEW.md](docs/1.%20API-OVERVIEW.md) (app behavior + known-defect catalog), [docs/2. TEST-FRAMEWORK.md](docs/2.%20TEST-FRAMEWORK.md) (suite structure + rationale), [docs/3. TEST-CASES.md](docs/3.%20TEST-CASES.md) (every TC), [docs/4. DEFECT-LOG.md](docs/4.%20DEFECT-LOG.md) (repro steps) — the last three cross-referenced by id |
 
@@ -79,9 +79,12 @@ restful-booker-automation-suite/
 ├── docs/
 │   ├── 1. API-OVERVIEW.md        # What the app does, its data/auth model, known defects, "looks like a bug" log
 │   ├── 2. TEST-FRAMEWORK.md      # Suite structure, conventions, and the rationale behind them
-│   ├── 3. TEST-CASES.md          # Every test case (TC-001–TC-030), grouped by module, with test data tables
+│   ├── 3. TEST-CASES.md          # Every test case (TC-001–TC-033), grouped by module, with test data tables
 │   └── 4. DEFECT-LOG.md          # Full repro steps for each confirmed defect, cross-linked to TC ids
 ├── src/
+│   ├── clients/
+│   │   ├── booking.client.ts     # BookingClient — every /booking call
+│   │   └── auth.client.ts        # AuthClient — every /auth call
 │   ├── collections/
 │   │   ├── restful-booker.postman_collection.json  # Postman collection — auth, CRUD, filtering
 │   │   ├── environment.json                          # Local environment values (git-ignored)
@@ -89,18 +92,23 @@ restful-booker-automation-suite/
 │   ├── contracts/                # Pact consumer/provider specs + generated pact files
 │   │   ├── specs/                 # booking-consumer.spec.ts, booking-provider.verification.spec.ts
 │   │   └── pacts/                 # generated pact JSON (git-ignored, regenerated on each run)
-│   ├── enums/                    # Shared enums (empty — add as needed)
 │   ├── fixtures/
-│   │   └── auth.fixture.ts       # Worker-scoped `authToken` fixture (one login per worker, not per test)
-│   ├── pages/                    # Page object models (empty — unused for an API-only suite)
+│   │   ├── api-clients.fixture.ts  # bookingClient / authClient (test-scoped)
+│   │   ├── auth.fixture.ts         # Worker-scoped `authToken` fixture (one login per worker, not per test)
+│   │   └── app.fixture.ts          # Merges both via mergeTests() — the import every spec uses
 │   ├── types/
-│   │   └── app.ts                # `Booking` interface + `Nullable<T>` (negative-test override type)
+│   │   ├── app.ts                # `Booking` interface + `Nullable<T>` (negative-test override type)
+│   │   └── contract-matchers.ts  # Pact matcher return types shared by contract-helpers.ts
 │   ├── utils/
 │   │   ├── auth.ts               # `getAuthToken`, `DEFAULT_CREDENTIALS` (from env vars)
-│   │   └── config.ts             # Env var helpers (e.g. getEnv)
+│   │   ├── config.ts             # Env var helpers (e.g. getEnv)
+│   │   ├── constants.ts          # BOOKING_PATH, AUTH_PATH
+│   │   ├── contract-helpers.ts   # Pact matcher helpers shared by the consumer spec
+│   │   └── schema-validator.ts   # ajv compileSchema/formatSchemaErrors, used by schema-validation.spec.ts
 │   └── test-data/
-│       └── factories/
-│           └── booking-data.factory.ts  # `DEFAULT_BOOKING_DATA`, `VALIDATION_SCENARIOS` data table
+│       ├── factories/
+│       │   └── booking-data.factory.ts  # `DEFAULT_BOOKING_DATA`, `VALIDATION_SCENARIOS` data table
+│       └── schemas/               # ajv JSON Schemas — booking, created-booking, booking-list
 ├── tests/
 │   ├── api/
 │   │   ├── functional/           # One spec per endpoint (auth, booking create/retrieve/update/delete) +
@@ -112,12 +120,12 @@ restful-booker-automation-suite/
 ├── .env.dev                      # Local env file (git-ignored; copy from .env.example)
 ├── commitlint.config.js          # Conventional Commits rules, enforced by the commit-msg hook
 ├── eslint.config.mts             # Flat ESLint config (TypeScript + Playwright + Prettier + import order rules)
-├── playwright.config.ts          # Playwright projects, reporters, timeouts, storage state setup
+├── playwright.config.ts          # Playwright projects, reporters, timeouts
 ├── tsconfig.json                 # TypeScript compiler options + @alias path mappings
 └── package.json                  # Scripts and dependencies
 ```
 
-**Path aliases:** `@fixtures/*`, `@enums/*`, `@test-data/*`, `@utils/*`, `@pages/*`, `@app-types/*` all resolve to their matching `src/` subfolder — no relative `../../../` imports needed. These work in both Playwright (native `tsconfig.json` support, no extra loader) and ESLint (via `eslint-import-resolver-typescript`).
+**Path aliases:** `@fixtures/*`, `@clients/*`, `@utils/*`, `@test-data/*`, `@app-types/*` all resolve to their matching `src/` subfolder — no relative `../../../` imports needed. These work in both Playwright (native `tsconfig.json` support, no extra loader) and ESLint (via `eslint-import-resolver-typescript`).
 
 ---
 
