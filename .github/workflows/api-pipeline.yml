@@ -21,13 +21,7 @@ jobs:
               run: npm ci
 
             # Cheapest, fastest check — gates the rest of the pipeline on basic API
-            # reachability before spending minutes on the full Playwright suite.
-            # environment.json is gitignored (local-only, like .env.dev) so a fresh CI
-            # checkout never has it — this runs against the committed template instead,
-            # with --env-var overriding baseUrl/admin creds from the same vars/secrets
-            # the Playwright step below uses. --reporter-allure-resultsDir points at the
-            # same folder allure-playwright writes to, so one `allure generate` call
-            # covers both suites.
+            # reachability before spending minutes on the full Playwright suite
             - name: Run Newman (Postman collection)
               id: newman
               run: |
@@ -58,7 +52,7 @@ jobs:
 
             # Gated on Newman having run, not Playwright — Newman's own results now
             # feed reports/allure-results too, so a report is still worth generating
-            # (showing Newman's failure) even when it blocked Playwright from running.
+            # (showing Newman's failure) even when it blocked Playwright from running
             - name: Generate Allure report
               if: ${{ !cancelled() && steps.newman.outcome != 'skipped' }}
               run: npm run allure:generate
@@ -71,8 +65,9 @@ jobs:
                   path: reports/allure-report/
                   retention-days: 30
 
-            # report/<run_number>/ is archived per run so history survives; report/index.html
-            # lists them newest-first. Only the last REPORT_HISTORY_LIMIT runs are kept.
+            # report/<run_number>/ is archived per run so history survives; the gh-pages
+            # root index.html *is* the history page and lists them newest-first.
+            # Only the last REPORT_HISTORY_LIMIT runs are kept
             - name: Checkout gh-pages
               if: ${{ !cancelled() && steps.newman.outcome != 'skipped' }}
               uses: actions/checkout@v4
@@ -86,9 +81,9 @@ jobs:
               env:
                   REPORT_HISTORY_LIMIT: 20
                   # Copies this run's Allure report into report/<run_number>/ on the gh-pages
-                  # branch, prunes runs beyond REPORT_HISTORY_LIMIT, regenerates report/index.html
-                  # with links to all retained runs (newest first), then commits and pushes,
-                  # skipping the commit if nothing changed
+                  # branch, prunes runs beyond REPORT_HISTORY_LIMIT, regenerates the root
+                  # index.html with links to all retained runs (newest first, newest marked
+                  # "Latest"), then commits and pushes, skipping the commit if nothing changed
               run: |
                   set -euo pipefail
                   cd gh-pages
@@ -104,15 +99,53 @@ jobs:
                   (cd report && ls -1dt */ 2>/dev/null | tail -n +$((REPORT_HISTORY_LIMIT + 1)) | xargs -r rm -rf)
 
                   {
-                      echo "<!DOCTYPE html><html><head><title>Allure Report History</title></head><body>"
-                      echo "<h1>Allure Report History</h1><ul>"
-                      for d in $(cd report && ls -1dt */ | sed 's#/##'); do
-                          echo "<li><a href=\"$d/\">Run $d</a></li>"
-                      done
-                      echo "</ul></body></html>"
-                  } >report/index.html
+                      echo '<!DOCTYPE html>'
+                      echo '<html lang="en">'
+                      echo '<head>'
+                      echo '<meta charset="utf-8">'
+                      echo '<meta name="viewport" content="width=device-width, initial-scale=1">'
+                      echo '<title>Restful Booker Automation Suite — Report History</title>'
+                      echo '<style>'
+                      echo ':root { color-scheme: light dark; }'
+                      echo 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 720px; margin: 3rem auto; padding: 0 1.5rem; line-height: 1.5; color: #1a1a1a; background: #fff; }'
+                      echo 'h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }'
+                      echo 'p.subtitle { color: #57606a; margin-top: 0; margin-bottom: 2rem; }'
+                      echo 'ul.runs { list-style: none; padding: 0; margin: 0; border: 1px solid #e2e2e2; border-radius: 8px; overflow: hidden; }'
+                      echo 'ul.runs li { border-bottom: 1px solid #e2e2e2; }'
+                      echo 'ul.runs li:last-child { border-bottom: none; }'
+                      echo 'ul.runs a { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.2rem; text-decoration: none; color: #1a1a1a; transition: background 0.15s ease; }'
+                      echo 'ul.runs a:hover { background: #f6f8fa; }'
+                      echo '.badge { font-size: 0.75rem; font-weight: 600; color: #1a7f37; background: #dafbe1; padding: 0.15rem 0.5rem; border-radius: 999px; }'
+                      echo '@media (prefers-color-scheme: dark) {'
+                      echo '  body { background: #0d1117; color: #e6edf3; }'
+                      echo '  p.subtitle { color: #9198a1; }'
+                      echo '  ul.runs { border-color: #30363d; }'
+                      echo '  ul.runs li { border-color: #30363d; }'
+                      echo '  ul.runs a { color: #e6edf3; }'
+                      echo '  ul.runs a:hover { background: #161b22; }'
+                      echo '  .badge { color: #3fb950; background: #033a16; }'
+                      echo '}'
+                      echo '</style>'
+                      echo '</head>'
+                      echo '<body>'
+                      echo '<h1>Restful Booker Automation Suite</h1>'
+                      echo '<p class="subtitle">Allure report history — Newman + Playwright results, published by <code>api-pipeline.yml</code> on every push to <code>main</code>. Last 20 runs kept.</p>'
+                      echo '<ul class="runs">'
 
-                  git add report
+                      first=true
+                      for d in $(cd report && ls -1dt */ | sed 's#/##'); do
+                          if [ "$first" = true ]; then
+                              echo "<li><a href=\"report/$d/\">Run $d <span class=\"badge\">Latest</span></a></li>"
+                              first=false
+                          else
+                              echo "<li><a href=\"report/$d/\">Run $d</a></li>"
+                          fi
+                      done
+
+                      echo '</ul></body></html>'
+                  } >index.html
+
+                  git add report index.html
                   if git diff --cached --quiet; then
                       echo "No report changes to commit"
                   else
@@ -121,9 +154,9 @@ jobs:
                   fi
 
             # Chained to the publish step's own outcome, not just !cancelled(), so a failed
-            # push (e.g. a gh-pages race) doesn't print a link to a report that isn't there.
+            # push (e.g. a gh-pages race) doesn't print a link to a report that isn't there
             - name: Summarize report URL
               if: ${{ !cancelled() && steps.publish-history.outcome == 'success' }}
               run: |
                   echo "📊 [View this run's Allure report](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report/${{ github.run_number }}/)" >> "$GITHUB_STEP_SUMMARY"
-                  echo "🗂️ [Report history](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report/)" >> "$GITHUB_STEP_SUMMARY"
+                  echo "🗂️ [Report history](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/)" >> "$GITHUB_STEP_SUMMARY"
