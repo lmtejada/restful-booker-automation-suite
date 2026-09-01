@@ -16,7 +16,8 @@ npm run test:regression              # --grep @regression
 npm run test:api                     # --grep @api
 npm run test:issues                  # --grep @issues (known-bug tests, see below)
 npm run test:integration             # --grep @integration (cross-endpoint serial flows)
-npm run test:ci                      # single-worker run
+npm run test:contract                # --grep @contract (Pact consumer + provider verification, see below)
+npm run test:api-suite               # --project="Playwright: restful-booker-api" (what api-pipeline.yml runs, excludes Pact)
 
 npm run lint / lint:fix
 npm run typecheck                    # tsc --noEmit
@@ -28,7 +29,7 @@ npm run allure:report                # generate + open the Allure report
 
 There is no build step and no browser install — this is an API-only Playwright suite (`request` fixture, `APIRequestContext`), so `npx playwright install` is never needed.
 
-Always run `lint`, `typecheck`, and the relevant spec file(s) after touching `src/` or `tests/` — CI (`on-branch-push.yml`) gates on lint + typecheck + `@smoke` on every push, and `api-pipeline.yml` runs Newman, then the full Playwright suite, then generates and publishes an Allure report, on push to `main`.
+Always run `lint`, `typecheck`, and the relevant spec file(s) after touching `src/` or `tests/` — CI (`on-branch-push.yml`) gates on lint + typecheck + `@smoke` on every push, and `api-pipeline.yml` runs Newman, then the main API suite, then Pact contract tests, then generates and publishes an Allure report, on push to `main`.
 
 ## Architecture
 
@@ -81,13 +82,25 @@ Credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) come from env vars everywhere �
 ### Test folder layout
 
 - `tests/api/functional/` — one spec file per endpoint (`auth`, `booking-create`, `booking-retrieve`, `booking-update`, `booking-delete`) plus the data-driven `booking-validation` spec above.
-- `tests/api/integration/` — cross-endpoint flows: `booking-crud.spec.ts` is a `test.describe.serial` end-to-end lifecycle (auth → create → read → update → delete) sharing state across its 5 steps; `schema-validation.spec.ts` is a placeholder, not yet implemented.
+- `tests/api/integration/` — cross-endpoint flows: `booking-crud.spec.ts` is a `test.describe.serial` end-to-end lifecycle (auth → create → read → update → delete) sharing state across its 5 steps; `schema-validation.spec.ts` runs ajv schema checks against 5 live response shapes (create, get-by-id, list, put, patch).
 - `tests/sanity.spec.ts` — framework/environment smoke check, tagged `@smoke` at the describe level (separate from the per-endpoint `[Smoke]`-prefixed tests, which are tagged `@smoke` individually).
+
+### Contract testing: Pact, verified directly against the live API
+
+`src/contracts/specs/booking-consumer.spec.ts` (consumer, `PactV3`) and `booking-provider.verification.spec.ts` (provider, `Verifier`) sit outside `tests/` — they're their own Playwright projects in `playwright.config.ts` (`Pact: consumer`, `Pact: provider verification`, the latter `dependencies`-ordered after the former), tagged `@contract`, run via `npm run test:contract`. `api-pipeline.yml` runs them in their own step (`Run Pact contract tests`), separate from the main API suite's step, so a contract break shows up on its own instead of inside the regression suite's pass/fail.
+
+There's no Pact Broker. The consumer spec generates a pact file into `src/contracts/pacts/` (git-ignored, regenerated every run); the provider spec reads that file straight off disk and verifies it against the real `restful-booker.herokuapp.com` (via `getEnv('API_URL')`) in the same run. This gets detection value — a break shows up the next time the suite runs — not the pre-deploy prevention a broker-gated setup would give. See `docs/2. TEST-FRAMEWORK.md` §8.7.
+
+Keep Pact narrow: only add an interaction for a shape the suite actually depends on (currently the `/auth` token, `POST /booking`, and `GET /booking/:id`). Field-level edge cases belong in `VALIDATION_SCENARIOS` above, not Pact.
+
+One thing that isn't obvious when adding a new interaction: an interaction whose request depends on data that has to exist on the live API — not a fixed id, this API has no seed/reset endpoint (see above) — needs `MatchersV3.fromProviderState(expression, exampleValue)` on the consumer side and a matching `stateHandlers['state name']` in the provider spec that creates the real data and returns it. See `docs/2. TEST-FRAMEWORK.md` §8.8 for the `GET /booking/:id` example.
+
+Shared matcher helpers (`bookingDatesMatcher`, `bookingBodyMatcher`, `withMockClient`) live in `src/utils/contract-helpers.ts`, deliberately free of `expect`/`test` — test-only concerns stay in the spec files.
 
 ### Conventions worth knowing before adding a test
 
 - Path aliases (`@fixtures/*`, `@clients/*`, `@utils/*`, `@test-data/*`, `@app-types/*`, `@enums/*`, `@pages/*`) resolve to `src/*` subfolders — no relative `../../../` imports.
-- Tags (`@smoke`, `@regression`, `@api`, `@issues`, `@integration`) map to `npm run test:*` scripts via `--grep`; a test can carry multiple (`{ tag: ['@api', '@regression'] }`).
+- Tags (`@smoke`, `@regression`, `@api`, `@issues`, `@integration`, `@contract`) map to `npm run test:*` scripts via `--grep`; a test can carry multiple (`{ tag: ['@api', '@regression'] }`).
 - `Nullable<T>` (`src/types/app.ts`) is the override type for negative-test payloads (every field also accepts `null`/`undefined`); `generateBookingData()`'s param type is widened to `Nullable<Booking> | Record<string, unknown>` to also allow deliberately wrong-typed values (e.g. `totalprice: 'one-hundred'`) for type-validation scenarios.
 - ESLint enforces explicit function return types, import ordering/grouping, no hard waits, web-first assertions, and no `console`/`test.only` — run `npm run lint` before considering a change done.
 

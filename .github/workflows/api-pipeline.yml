@@ -36,7 +36,18 @@ jobs:
 
             - name: Run Playwright tests
               id: run-playwright
-              run: npx playwright test
+              run: npm run test:api-suite
+              env:
+                  API_URL: ${{ vars.API_URL }}
+                  ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+                  ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+
+            # Separate from the step above so a contract break is visible on its own,
+            # not buried in the main suite's pass/fail. Same playwright.config.ts, so
+            # results land in the same reports/allure-results dir either way.
+            - name: Run Pact contract tests
+              id: run-contract
+              run: npm run test:contract
               env:
                   API_URL: ${{ vars.API_URL }}
                   ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
