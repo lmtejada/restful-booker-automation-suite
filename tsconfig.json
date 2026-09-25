@@ -3,10 +3,8 @@
         "paths": {
             "@fixtures/*": ["./src/fixtures/*"],
             "@clients/*": ["./src/clients/*"],
-            "@enums/*": ["./src/enums/*"],
             "@test-data/*": ["./src/test-data/*"],
             "@utils/*": ["./src/utils/*"],
-            "@pages/*": ["./src/pages/*"],
             "@app-types/*": ["./src/types/*"]
         },
         "target": "ESNext",

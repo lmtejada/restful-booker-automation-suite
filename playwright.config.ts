@@ -20,9 +20,6 @@ dotenv.config({ path: environmentPath });
 export default defineConfig({
     testDir: './tests',
 
-    /* Run tests in files in parallel */
-    fullyParallel: true,
-
     /* Fail the build on CI if you accidentally left test.only in the source code */
     forbidOnly: !!process.env.CI,
 
@@ -84,6 +81,22 @@ export default defineConfig({
     projects: [
         {
             name: 'Playwright: restful-booker-api',
+        },
+        {
+            name: 'Pact: consumer',
+            testDir: './src/contracts/specs',
+            testMatch: 'booking-consumer.spec.ts',
+            // Talks only to Pact's local mock server, not the live API —
+            // no baseURL/headers needed from the shared `use` block above.
+            use: {},
+        },
+        {
+            name: 'Pact: provider verification',
+            testDir: './src/contracts/specs',
+            testMatch: 'booking-provider.verification.spec.ts',
+            // Must run after the consumer project writes contracts/pacts/*.json.
+            dependencies: ['Pact: consumer'],
+            use: {},
         },
     ],
 });

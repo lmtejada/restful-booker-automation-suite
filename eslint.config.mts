@@ -173,7 +173,7 @@ const config = [
         // Every test case documented in `docs/3. TEST-CASES.md` traces back
         // to its automation via a [TC-XXX] title prefix. tests/sanity.spec.ts
         // is intentionally excluded — it's a framework check, not a TC.
-        files: ['tests/api/**/*.spec.ts'],
+        files: ['tests/api/**/*.spec.ts', 'src/contracts/specs/**/*.spec.ts'],
         rules: {
             'playwright/valid-title': [
                 'error',
