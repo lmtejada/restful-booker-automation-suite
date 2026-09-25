@@ -1,0 +1,23 @@
+// Status Code Validation (Accepts 200 OK or 201 Created for REST conventions)
+pm.test("Status code is 200 or 201", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+});
+
+// Performance Target Constraint (< 2000 ms response time)
+pm.test("Response time is under 2000ms", function () {
+    pm.expect(pm.response.responseTime).to.be.below(2000);
+});
+
+// Content-Type Header Format Constraints
+pm.test("Content-Type header is present", function () {
+    pm.response.to.have.header("Content-Type");
+});
+
+// JSON Payload Verification (Applies to JSON endpoints)
+if (pm.response.headers.get("Content-Type") && pm.response.headers.get("Content-Type").includes("application/json")) {
+    pm.test("Response body is valid JSON", function () {
+        const jsonData = pm.response.json();
+        const isObjectOrArray = typeof jsonData === 'object' && jsonData !== null;
+        pm.expect(isObjectOrArray).to.be.true;
+    });
+}

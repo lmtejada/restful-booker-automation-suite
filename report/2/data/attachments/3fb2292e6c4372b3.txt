@@ -1,0 +1,38 @@
+// Skip token generation if hitting the /auth endpoint directly
+if (pm.request.url.getPath().includes('auth')) {
+    return;
+}
+
+// Check if a token already exists in the environment
+const existingToken = pm.environment.get("token");
+
+// Request a fresh token
+const baseUrl = pm.environment.get("baseUrl");
+
+pm.sendRequest({
+    url: `${baseUrl}/auth`,
+    method: 'POST',
+    header: {
+        'Content-Type': 'application/json'
+    },
+    body: {
+        mode: 'raw',
+        raw: JSON.stringify({
+            "username": pm.environment.get("admin_username"),
+            "password": pm.environment.get("admin_password")
+        })
+    }
+}, function (err, res) {
+    if (err) {
+        console.error("Failed to fetch auth token:", err);
+        return;
+    }
+
+    const responseData = res.json();
+    if (responseData && responseData.token) {
+        pm.environment.set("token", responseData.token);
+        console.log("Fresh token generated and saved:", responseData.token);
+    } else {
+        console.error("Auth response did not contain a valid token.");
+    }
+});

@@ -1,0 +1,8 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"","334","Bookings - Get Booking IDs","Newman: Restful Booker API","2026-09-25","passed","2026-09-25","","","",""
+"","169","Bookings - Update Booking - Partial","Newman: Restful Booker API","2026-09-25","passed","2026-09-25","","","",""
+"","179","Bookings - Get Booking","Newman: Restful Booker API","2026-09-25","failed","2026-09-25","","","",""
+"","173","Bookings - Update Booking - Full","Newman: Restful Booker API","2026-09-25","passed","2026-09-25","","","",""
+"","373","Bookings - Delete Booking","Newman: Restful Booker API","2026-09-25","passed","2026-09-25","","","",""
+"","385","Auth - Create Token","Newman: Restful Booker API","2026-09-25","passed","2026-09-25","","","",""
+"","321","Bookings - Create Booking","Newman: Restful Booker API","2026-09-25","passed","2026-09-25","","","",""
