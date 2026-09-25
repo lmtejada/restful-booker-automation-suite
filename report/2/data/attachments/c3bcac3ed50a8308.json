@@ -1,0 +1,12 @@
+{
+    "Content-Length": "27",
+    "Content-Type": "application/json; charset=utf-8",
+    "Date": "Fri, 25 Sep 2026 08:02:21 GMT",
+    "Etag": "W/\"1b-wMD+UfmW3s634bWA4sk3ZOsm5uM\"",
+    "Nel": "{\"report_to\":\"heroku-nel\",\"response_headers\":[\"Via\"],\"max_age\":3600,\"success_fraction\":0.01,\"failure_fraction\":0.1}",
+    "Report-To": "{\"group\":\"heroku-nel\",\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?s=7UFvqO2hom2UxBFGl%2FOiEK8%2F7kUwLjzTha%2FS4C3olkY%3D\\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\\u0026ts=1790323341\"}],\"max_age\":3600}",
+    "Reporting-Endpoints": "heroku-nel=\"https://nel.heroku.com/reports?s=7UFvqO2hom2UxBFGl%2FOiEK8%2F7kUwLjzTha%2FS4C3olkY%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1790323341\"",
+    "Server": "Heroku",
+    "Via": "1.1 heroku-router",
+    "X-Powered-By": "Express"
+}

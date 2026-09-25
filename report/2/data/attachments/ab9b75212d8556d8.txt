@@ -1,0 +1,64 @@
+[08:02:34.790] INFO (2285): pact@16.5.0: Verifying provider
+
+[08:02:34.798] INFO (2285): pact-core@19.2.0: Verifying Pacts.
+
+[08:02:34.798] INFO (2285): pact-core@19.2.0: Verifying Pact Files
+
+[08:02:34.800] INFO (2285): 0.5.4: pact native library successfully found, and the correct version
+
+2026-09-25T08:02:34.807813Z  INFO ThreadId(05) pact_verifier: Running setup provider state change handler 'a booking exists' for 'a request for an existing booking by id'
+2026-09-25T08:02:35.127085Z  INFO ThreadId(05) pact_verifier: Running provider verification for 'a request for an existing booking by id'
+2026-09-25T08:02:35.127177Z  INFO ThreadId(05) pact_verifier::provider_client: Sending request to provider at http://127.0.0.1:42205/
+2026-09-25T08:02:35.127181Z  INFO ThreadId(05) pact_verifier::provider_client: Sending request HTTP Request ( method: GET, path: /booking/617, query: None, headers: Some({"Accept": ["application/json"]}), body: Missing )
+2026-09-25T08:02:35.407381Z  INFO ThreadId(05) pact_verifier::provider_client: Received response: HTTP Response ( status: 200, headers: Some({"via": ["1.1 heroku-router"], "etag": ["W/\"aa-xyKXaeSqwPLV67zaHlxtFIvOy8Y\""], "server": ["Heroku"], "x-powered-by": ["Express"], "content-type": ["application/json; charset=utf-8"], "date": ["Fri, 25 Sep 2026 08:02:35 GMT"], "connection": ["close"], "content-length": ["170"], "nel": ["{\"report_to\":\"heroku-nel\",\"response_headers\":[\"Via\"],\"max_age\":3600,\"success_fraction\":0.01,\"failure_fraction\":0.1}"], "report-to": ["{\"group\":\"heroku-nel\",\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?s=%2B9atFF9R%2BBao%2BLipH3wgWCd2vc0QCOJdhee6oqqFV8Y%3D\\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\\u0026ts=1790323355\"}],\"max_age\":3600}"], "reporting-endpoints": ["heroku-nel=\"https://nel.heroku.com/reports?s=%2B9atFF9R%2BBao%2BLipH3wgWCd2vc0QCOJdhee6oqqFV8Y%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1790323355\""]}), body: Present(170 bytes, application/json;charset=utf-8) )
+2026-09-25T08:02:35.408361Z  INFO ThreadId(05) pact_verifier: Running teardown provider state change handler 'a booking exists' for 'a request for an existing booking by id'
+2026-09-25T08:02:35.415910Z  INFO ThreadId(05) pact_verifier: Running setup provider state change handler with empty state for 'a request to authenticate with valid credentials'
+[08:02:35.419] WARN (2285): pact@16.5.0: no state handler found for state: ""
+
+2026-09-25T08:02:35.420051Z  INFO ThreadId(05) pact_verifier: Running provider verification for 'a request to authenticate with valid credentials'
+2026-09-25T08:02:35.420080Z  INFO ThreadId(05) pact_verifier::provider_client: Sending request to provider at http://127.0.0.1:42205/
+2026-09-25T08:02:35.420084Z  INFO ThreadId(05) pact_verifier::provider_client: Sending request HTTP Request ( method: POST, path: /auth, query: None, headers: Some({"Content-Type": ["application/json"]}), body: Present(45 bytes) )
+2026-09-25T08:02:35.695326Z  INFO ThreadId(05) pact_verifier::provider_client: Received response: HTTP Response ( status: 200, headers: Some({"nel": ["{\"report_to\":\"heroku-nel\",\"response_headers\":[\"Via\"],\"max_age\":3600,\"success_fraction\":0.01,\"failure_fraction\":0.1}"], "report-to": ["{\"group\":\"heroku-nel\",\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?s=%2B9atFF9R%2BBao%2BLipH3wgWCd2vc0QCOJdhee6oqqFV8Y%3D\\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\\u0026ts=1790323355\"}],\"max_age\":3600}"], "content-type": ["application/json; charset=utf-8"], "date": ["Fri, 25 Sep 2026 08:02:35 GMT"], "x-powered-by": ["Express"], "server": ["Heroku"], "connection": ["close"], "reporting-endpoints": ["heroku-nel=\"https://nel.heroku.com/reports?s=%2B9atFF9R%2BBao%2BLipH3wgWCd2vc0QCOJdhee6oqqFV8Y%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1790323355\""], "content-length": ["27"], "etag": ["W/\"1b-tC6ZnXRIMl25y1Z+qh5y8E0RnZM\""], "via": ["1.1 heroku-router"]}), body: Present(27 bytes, application/json;charset=utf-8) )
+2026-09-25T08:02:35.695770Z  INFO ThreadId(05) pact_verifier: Running teardown provider state change handler with empty state for 'a request to authenticate with valid credentials'
+2026-09-25T08:02:35.703046Z  INFO ThreadId(05) pact_verifier: Running setup provider state change handler with empty state for 'a request to create a new booking'
+[08:02:35.706] WARN (2285): pact@16.5.0: no state handler found for state: ""
+
+2026-09-25T08:02:35.707112Z  INFO ThreadId(05) pact_verifier: Running provider verification for 'a request to create a new booking'
+2026-09-25T08:02:35.707147Z  INFO ThreadId(05) pact_verifier::provider_client: Sending request to provider at http://127.0.0.1:42205/
+2026-09-25T08:02:35.707150Z  INFO ThreadId(05) pact_verifier::provider_client: Sending request HTTP Request ( method: POST, path: /booking, query: None, headers: Some({"Content-Type": ["application/json"]}), body: Present(178 bytes) )
+2026-09-25T08:02:35.968576Z  INFO ThreadId(05) pact_verifier::provider_client: Received response: HTTP Response ( status: 200, headers: Some({"reporting-endpoints": ["heroku-nel=\"https://nel.heroku.com/reports?s=%2B9atFF9R%2BBao%2BLipH3wgWCd2vc0QCOJdhee6oqqFV8Y%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1790323355\""], "via": ["1.1 heroku-router"], "content-type": ["application/json; charset=utf-8"], "x-powered-by": ["Express"], "report-to": ["{\"group\":\"heroku-nel\",\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?s=%2B9atFF9R%2BBao%2BLipH3wgWCd2vc0QCOJdhee6oqqFV8Y%3D\\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\\u0026ts=1790323355\"}],\"max_age\":3600}"], "connection": ["close"], "server": ["Heroku"], "nel": ["{\"report_to\":\"heroku-nel\",\"response_headers\":[\"Via\"],\"max_age\":3600,\"success_fraction\":0.01,\"failure_fraction\":0.1}"], "etag": ["W/\"ce-4Q/gH1EdAiehm2NtDIITOoxCpYA\""], "date": ["Fri, 25 Sep 2026 08:02:35 GMT"], "content-length": ["206"]}), body: Present(206 bytes, application/json;charset=utf-8) )
+2026-09-25T08:02:35.969078Z  INFO ThreadId(05) pact_verifier: Running teardown provider state change handler with empty state for 'a request to create a new booking'
+2026-09-25T08:02:35.973173Z  WARN ThreadId(05) pact_matching::metrics: 
+
+Please note:
+We are tracking events anonymously to gather important usage statistics like Pact version and operating system. To disable tracking, set the 'PACT_DO_NOT_TRACK' environment variable to 'true'.
+
+
+
+Verifying a pact between Restful-Booker-Automation-Suite and Heroku-Booker-API
+
+  a request for an existing booking by id (0s loading, 609ms verification)
+     Given a booking exists
+    returns a response which
+      has status code 200 (OK)
+      includes headers
+        "Content-Type" with value "application/json; charset=utf-8" (OK)
+      has a matching body (OK)
+
+  a request to authenticate with valid credentials (0s loading, 286ms verification)
+    returns a response which
+      has status code 200 (OK)
+      includes headers
+        "Content-Type" with value "application/json; charset=utf-8" (OK)
+      has a matching body (OK)
+
+  a request to create a new booking (0s loading, 273ms verification)
+    returns a response which
+      has status code 200 (OK)
+      includes headers
+        "Content-Type" with value "application/json; charset=utf-8" (OK)
+      has a matching body (OK)
+
+
+[08:02:36.042] INFO (2285): pact-core@19.2.0: Verification successful
+

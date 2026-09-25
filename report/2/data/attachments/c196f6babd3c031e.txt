@@ -1,0 +1,2 @@
+2026-09-25T08:02:34.179395Z  INFO tokio-rt-worker pact_mock_server::hyper_server: Received request POST /auth
+2026-09-25T08:02:34.180185Z  INFO tokio-rt-worker pact_mock_server::hyper_server: Request matched, sending response

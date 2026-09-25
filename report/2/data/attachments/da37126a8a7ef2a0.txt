@@ -1,0 +1,3 @@
+2026-09-25T08:02:34.242291Z  INFO tokio-rt-worker pact_mock_server::hyper_server: Received request GET /booking/1
+2026-09-25T08:02:34.242444Z  INFO tokio-rt-worker pact_mock_server::hyper_server: Request matched, sending response
+2026-09-25T08:02:34.248230Z  WARN ThreadId(01) pact_models::pact: Note: Existing pact is an older specification version (V3), and will be upgraded
